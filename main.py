@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 """
-Optimized chromego_py extractor - 2026 version
-最大化提取节点：支持多种协议、自适应解析、严格安全去重、丰富输出
+Optimized chromego_py extractor - 2026 fixed version
+修复 SS base64 链接语法错误 + 提升鲁棒性
 """
 
 import yaml
@@ -16,7 +16,7 @@ import hashlib
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 全局
-servers_list = []          # 严格去重用（核心指纹）
+servers_list = []          # 严格去重指纹
 extracted_proxies = []
 geo_reader = None
 
@@ -37,12 +37,11 @@ def get_location(ip: str) -> str:
         return "UNK"
 
 def make_fingerprint(proxy: dict) -> str:
-    """生成严格指纹，用于去重。包含核心连接参数，避免误删不同配置的节点"""
     key_parts = [
         str(proxy.get('server', '')),
         str(proxy.get('port', '')),
         str(proxy.get('type', '')),
-        str(proxy.get('uuid', proxy.get('password', proxy.get('password', '')))),
+        str(proxy.get('uuid', proxy.get('password', ''))),
         str(proxy.get('network', 'tcp')),
         str(proxy.get('tls', False)),
         str(proxy.get('servername', proxy.get('sni', ''))),
@@ -63,7 +62,7 @@ def process_urls(urls_file: str, processor):
             urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         for idx, url in enumerate(urls):
             try:
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=20) as resp:
                     data = resp.read().decode('utf-8', errors='ignore')
                 processor(data, idx)
@@ -73,7 +72,7 @@ def process_urls(urls_file: str, processor):
     except Exception as e:
         logging.error(f"读取 urls 文件 {urls_file} 失败: {e}")
 
-# ==================== 协议处理器（自适应多种格式） ====================
+# ==================== 协议处理器 ====================
 
 def process_clash_meta(data, index):
     try:
@@ -82,7 +81,7 @@ def process_clash_meta(data, index):
         for i, p in enumerate(proxies):
             if not isinstance(p, dict) or 'server' not in p:
                 continue
-            p = dict(p)  # 复制避免修改原数据
+            p = dict(p)
             fp = make_fingerprint(p)
             if fp in servers_list:
                 continue
@@ -98,9 +97,8 @@ def process_hysteria(data, index):
         servers = content.get('server', content.get('servers', []))
         if isinstance(servers, str):
             servers = [servers]
-        for srv in servers if isinstance(servers, list) else [servers]:
-            if not srv:
-                continue
+        for srv in (servers if isinstance(servers, list) else [servers]):
+            if not srv: continue
             parts = srv.split(":")
             server = parts[0]
             port = int(parts[1].split(',')[0]) if len(parts) > 1 else 443
@@ -108,14 +106,9 @@ def process_hysteria(data, index):
             sni = content.get('server_name', content.get('sni', ''))
             p = {
                 "name": normalize_name({"server": server, "type": "hysteria"}, index, 0),
-                "type": "hysteria",
-                "server": server,
-                "port": port,
-                "auth-str": auth,
-                "up": content.get('up', 80),
-                "down": content.get('down', 100),
-                "sni": sni,
-                "skip-cert-verify": content.get('insecure', True),
+                "type": "hysteria", "server": server, "port": port,
+                "auth-str": auth, "up": 80, "down": 100,
+                "sni": sni, "skip-cert-verify": content.get('insecure', True),
                 "fast-open": True
             }
             fp = make_fingerprint(p)
@@ -129,8 +122,7 @@ def process_hysteria2(data, index):
     try:
         content = json.loads(data)
         server_str = content.get('server', '')
-        if not server_str:
-            return
+        if not server_str: return
         parts = server_str.split(":")
         server = parts[0]
         port = int(parts[1].split(',')[0]) if len(parts) > 1 else 443
@@ -139,11 +131,8 @@ def process_hysteria2(data, index):
         sni = tls.get('sni', '')
         p = {
             "name": normalize_name({"server": server, "type": "hysteria2"}, index, 0),
-            "type": "hysteria2",
-            "server": server,
-            "port": port,
-            "password": auth,
-            "sni": sni,
+            "type": "hysteria2", "server": server, "port": port,
+            "password": auth, "sni": sni,
             "skip-cert-verify": tls.get('insecure', True)
         }
         fp = make_fingerprint(p)
@@ -154,39 +143,34 @@ def process_hysteria2(data, index):
         logging.error(f"Hysteria2 处理失败 {index}: {e}")
 
 def process_xray_singbox(data, index):
-    """统一处理 Xray / Sing-box / v2ray 配置（支持 vless, vmess, trojan, ss 等）"""
     try:
         content = json.loads(data)
         outbounds = content.get('outbounds', []) or content.get('proxies', [])
         for i, ob in enumerate(outbounds):
-            if not isinstance(ob, dict):
-                continue
+            if not isinstance(ob, dict): continue
             proto = ob.get('protocol', ob.get('type', '')).lower()
             settings = ob.get('settings', {}) or ob
             stream = ob.get('streamSettings', {}) or ob.get('transport', {})
 
             server = settings.get('address') or settings.get('server')
             port = settings.get('port')
-            if not server or not port:
-                continue
+            if not server or not port: continue
 
             p = {"server": server, "port": int(port)}
-            fp_base = make_fingerprint(p)
 
             if proto in ('vless', 'vmess'):
                 uuid = settings.get('users', [{}])[0].get('id') or settings.get('uuid')
-                if not uuid:
-                    continue
+                if not uuid: continue
                 p.update({
-                    "type": proto,
-                    "uuid": uuid,
+                    "type": proto, "uuid": uuid,
                     "network": stream.get('network', 'tcp'),
                     "tls": stream.get('security', 'none') != 'none',
-                    "servername": stream.get('tlsSettings', {}).get('serverName') or stream.get('realitySettings', {}).get('serverName', ''),
+                    "servername": stream.get('tlsSettings', {}).get('serverName') or 
+                                  stream.get('realitySettings', {}).get('serverName', ''),
                     "flow": settings.get('users', [{}])[0].get('flow', ''),
                     "skip-cert-verify": True
                 })
-                if p['network'] == 'ws':
+                if p.get('network') == 'ws':
                     p["ws-opts"] = {"path": stream.get('wsSettings', {}).get('path', '/')}
 
             elif proto == 'trojan':
@@ -205,7 +189,7 @@ def process_xray_singbox(data, index):
                 })
 
             else:
-                continue  # 未知协议跳过
+                continue
 
             p['name'] = normalize_name(p, index, i)
             fp = make_fingerprint(p)
@@ -219,21 +203,20 @@ def process_xray_singbox(data, index):
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
 
-    # 处理所有 urls 文件（按你仓库现有结构）
     process_urls("urls/clash_meta_urls.txt", process_clash_meta)
     process_urls("urls/hysteria_urls.txt", process_hysteria)
     process_urls("urls/hysteria2_urls.txt", process_hysteria2)
     process_urls("urls/xray_urls.txt", process_xray_singbox)
-    process_urls("urls/singbox_urls.txt", process_xray_singbox)   # Sing-box 与 Xray 共用处理器
-    process_urls("urls/ss_urls.txt", process_xray_singbox)        # SS 也走统一处理器
+    process_urls("urls/singbox_urls.txt", process_xray_singbox)
+    process_urls("urls/ss_urls.txt", process_xray_singbox)
 
-    logging.info(f"总共成功提取 {len(extracted_proxies)} 个有效节点（去重后）")
+    logging.info(f"总共提取到 {len(extracted_proxies)} 个有效节点")
 
-    # 输出 Clash Meta YAML（原项目核心格式）
+    # 输出 clash_meta.yaml
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False)
 
-    # 输出 base64.txt（原项目要求的格式：所有支持的节点转 base64 订阅）
+    # 输出 base64.txt（修复了 SS 链接语法错误）
     all_links = []
     for p in extracted_proxies:
         typ = p.get('type', '').lower()
@@ -244,25 +227,28 @@ if __name__ == "__main__":
                     f"#{p['name']}")
             all_links.append(link)
         elif typ == 'vmess':
-            # VMess base64 简化版（可进一步完善）
-            vmess_dict = {"v": "2", "ps": p['name'], "add": p['server'], "port": p['port'],
-                          "id": p.get('uuid'), "aid": "0", "net": p.get('network','tcp'),
-                          "type": "none", "host": "", "path": "", "tls": "tls" if p.get('tls') else ""}
+            vmess_dict = {
+                "v": "2", "ps": p['name'], "add": p['server'], "port": str(p['port']),
+                "id": p.get('uuid'), "aid": "0", "net": p.get('network','tcp'),
+                "type": "none", "host": "", "path": "", "tls": "tls" if p.get('tls') else ""
+            }
             all_links.append("vmess://" + base64.b64encode(json.dumps(vmess_dict).encode()).decode())
         elif typ == 'ss':
-            ss_link = f"ss://{base64.b64encode(f'{p.get('cipher', 'aes-256-gcm')}:{p.get('password')}@{p['server']}:{p['port']}'.encode()).decode()}#{p['name']}"
+            # 修复后的写法（避免 f-string 嵌套问题）
+            ss_userinfo = f"{p.get('cipher', 'aes-256-gcm')}:{p.get('password')}"
+            ss_link = f"ss://{base64.b64encode(ss_userinfo.encode()).decode()}@{p['server']}:{p['port']}#{p['name']}"
             all_links.append(ss_link)
-        # Hysteria / Hysteria2 暂不转 base64（Clash YAML 已支持），可按需扩展
 
     with open("outputs/base64.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(all_links))
 
-    # 额外纯 VLESS 订阅（方便 v2rayN 等）
+    # 额外纯 VLESS 订阅
     with open("outputs/vless_subscription.txt", "w", encoding="utf-8") as f:
         vless_only = [ln for ln in all_links if ln.startswith("vless://")]
-        f.write(base64.b64encode("\n".join(vless_only).encode()).decode())
+        if vless_only:
+            f.write(base64.b64encode("\n".join(vless_only).encode()).decode())
 
     logging.info("输出完成！")
-    logging.info("   → outputs/clash_meta.yaml （Clash Meta）")
-    logging.info("   → outputs/base64.txt （原项目 base64 订阅）")
-    logging.info("   → outputs/vless_subscription.txt （纯 VLESS）")
+    logging.info("   → outputs/clash_meta.yaml")
+    logging.info("   → outputs/base64.txt")
+    logging.info("   → outputs/vless_subscription.txt")
