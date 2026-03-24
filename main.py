@@ -1,7 +1,9 @@
 # -*- coding: UTF-8 -*-
 """
-Fixed version - 2026-03-24
-修复 IPv6 server 解析错误（[2001:bc8:...]:port） + 提升节点提取数量
+Final Fixed Version - 2026-03-24
+- 修复 base64.txt（VLESS + Hysteria2 完整可用）
+- 增强 Hysteria/Hysteria2 IPv4 提取
+- 输出更友好
 """
 
 import yaml
@@ -23,7 +25,7 @@ geo_reader = None
 try:
     geo_reader = geoip2.database.Reader('GeoLite2-City.mmdb')
 except:
-    logging.warning("GeoLite2-City.mmdb not found, location = UNK")
+    logging.warning("GeoLite2-City.mmdb not found")
 
 def get_location(ip: str) -> str:
     if not geo_reader or not ip:
@@ -47,8 +49,7 @@ def make_fingerprint(proxy: dict) -> str:
         str(proxy.get('servername', proxy.get('sni', ''))),
         str(proxy.get('flow', '')),
     ]
-    fp = "|".join(key_parts).lower()
-    return hashlib.md5(fp.encode()).hexdigest()
+    return hashlib.md5("|".join(key_parts).lower().encode()).hexdigest()
 
 def normalize_name(proxy: dict, index: int, sub_index: int) -> str:
     loc = get_location(proxy.get('server', ''))
@@ -56,19 +57,17 @@ def normalize_name(proxy: dict, index: int, sub_index: int) -> str:
     return f"{loc}-{typ}-{index+1}-{sub_index+1}"
 
 def parse_server_port(server_str: str):
-    """智能解析 IPv4 / IPv6 server:port"""
+    """支持 IPv4 / IPv6 格式"""
     server_str = server_str.strip()
-    # IPv6 格式: [2001:db8::1]:12345
-    if server_str.startswith('['):
+    if server_str.startswith('['):  # IPv6 [2001:...]:port
         match = re.match(r'\[([^\]]+)\]:(\d+)', server_str)
         if match:
             return match.group(1), int(match.group(2))
-    # 普通 IPv4: 1.2.3.4:5678
-    elif ':' in server_str:
+    elif ':' in server_str and not server_str.count(':') > 1:  # IPv4
         parts = server_str.rsplit(':', 1)
         if len(parts) == 2 and parts[1].isdigit():
             return parts[0], int(parts[1])
-    return server_str, 443  # 默认端口
+    return server_str, 443
 
 def process_urls(urls_file: str, processor):
     try:
@@ -86,7 +85,7 @@ def process_urls(urls_file: str, processor):
     except Exception as e:
         logging.error(f"读取文件 {urls_file} 失败: {e}")
 
-# ==================== 处理器 ====================
+# ==================== 协议处理器 ====================
 
 def process_clash_meta(data, index):
     try:
@@ -111,6 +110,9 @@ def process_hysteria(data, index):
         for i, srv in enumerate(servers if isinstance(servers, list) else [servers]):
             if not srv: continue
             server, port = parse_server_port(srv)
+            # 优先尝试提取 IPv4（如果有）
+            if ':' in server and server.count(':') > 1:  # 是 IPv6，尝试找 IPv4
+                server = content.get('bindIPv4') or server
             auth = content.get('auth_str') or content.get('auth', content.get('password', ''))
             sni = content.get('server_name', content.get('sni', ''))
             p = {
@@ -133,6 +135,9 @@ def process_hysteria2(data, index):
         server_str = content.get('server', '')
         if not server_str: return
         server, port = parse_server_port(server_str)
+        # 优先 IPv4
+        if ':' in server and server.count(':') > 1:
+            server = content.get('bindIPv4') or server
         auth = content.get('auth') or content.get('password', '')
         tls = content.get('tls', {}) or {}
         sni = tls.get('sni', '')
@@ -206,6 +211,7 @@ def process_xray_singbox(data, index):
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
 
+    # 处理所有 urls
     process_urls("urls/clash_meta_urls.txt", process_clash_meta)
     process_urls("urls/hysteria_urls.txt", process_hysteria)
     process_urls("urls/hysteria2_urls.txt", process_hysteria2)
@@ -213,27 +219,49 @@ if __name__ == "__main__":
     process_urls("urls/singbox_urls.txt", process_xray_singbox)
     process_urls("urls/ss_urls.txt", process_xray_singbox)
 
-    logging.info(f"总共提取到 {len(extracted_proxies)} 个有效节点（去重后）")
+    logging.info(f"总共提取到 {len(extracted_proxies)} 个有效节点")
 
+    # 输出 Clash Meta YAML
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False)
 
+    # ==================== 修复后的 base64 输出 ====================
     all_links = []
     for p in extracted_proxies:
         typ = p.get('type', '').lower()
+        name = p.get('name', 'node')
+
         if typ == 'vless':
             link = (f"vless://{p.get('uuid')}@{p['server']}:{p['port']}?"
                     f"type={p.get('network','tcp')}&security={'tls' if p.get('tls') else 'none'}"
-                    f"&sni={p.get('servername','')}&flow={p.get('flow','')}&fp=chrome"
-                    f"#{p['name']}")
+                    f"&sni={p.get('servername','')}&flow={p.get('flow','')}"
+                    f"&fp=chrome&alpn=h3,http/1.1&allowInsecure=1"
+                    f"#{name}")
             all_links.append(link)
+
+        elif typ == 'hysteria2':
+            link = f"hysteria2://{p.get('password')}@{p['server']}:{p['port']}?insecure=1&sni={p.get('sni','')}#{name}"
+            all_links.append(link)
+
+        elif typ == 'hysteria':
+            link = f"hy://{p.get('auth-str', p.get('password', ''))}@{p['server']}:{p['port']}?insecure=1&sni={p.get('sni','')}#{name}"
+            all_links.append(link)
+
         elif typ == 'ss':
             ss_userinfo = f"{p.get('cipher', 'aes-256-gcm')}:{p.get('password')}"
-            ss_link = f"ss://{base64.b64encode(ss_userinfo.encode()).decode()}@{p['server']}:{p['port']}#{p['name']}"
+            ss_link = f"ss://{base64.b64encode(ss_userinfo.encode()).decode()}@{p['server']}:{p['port']}#{name}"
             all_links.append(ss_link)
-        # 可继续添加 vmess 等
 
     with open("outputs/base64.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(all_links))
 
-    logging.info("输出完成！请检查 outputs/clash_meta.yaml 和 base64.txt")
+    # 额外纯 VLESS base64 订阅（单个字符串，方便导入）
+    vless_only = [ln for ln in all_links if ln.startswith("vless://")]
+    with open("outputs/vless_subscription.txt", "w", encoding="utf-8") as f:
+        if vless_only:
+            f.write(base64.b64encode("\n".join(vless_only).encode()).decode())
+
+    logging.info("输出完成！")
+    logging.info("   → outputs/clash_meta.yaml （推荐用 Clash / Hiddify）")
+    logging.info("   → outputs/base64.txt （已修复，可直接导入 v2rayN / Nekobox）")
+    logging.info("   → outputs/vless_subscription.txt （纯 VLESS 订阅）")
