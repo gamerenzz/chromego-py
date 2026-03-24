@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 """
-最终完善版 - 正确处理 Hysteria2 跳跃端口
+最终完善版 - 正确处理 Hysteria2 跳跃端口（使用 ports 字段）
 Y系列 → sources.txt （前缀 Y-）
 Z系列 → sources-j.txt （前缀 Z-）
 """
@@ -107,27 +107,27 @@ def process_json(data, prefix):
                     "name": f"{prefix}{get_location(server)}-{typ.upper()}-{i+1}",
                     "type": typ,
                     "server": server,
-                    "port": main_port,                    # 主端口保持 27921
+                    "port": main_port,                    # 主端口（如 27921）
                     "password": content.get('auth') or content.get('password', content.get('auth_str', '')),
                     "sni": content.get('sni') or (content.get('tls') or {}).get('sni', ''),
                     "skip-cert-verify": True
                 }
                 
                 # ==================== 关键修复：跳跃端口 ====================
-                server_ports = None
+                ports_range = None
                 if content.get('server_ports'):
-                    server_ports = content.get('server_ports')
+                    ports_range = content.get('server_ports')
                 elif content.get('hop_ports'):
-                    server_ports = content.get('hop_ports')
+                    ports_range = content.get('hop_ports')
                 elif isinstance(s, str) and ',' in s:
-                    # 处理类似 27921,28000-29000 的情况
-                    parts = s.split(',')
+                    # 处理 "27921,28000-29000" 这种情况，取后面的范围
+                    parts = [part.strip() for part in s.split(',')]
                     if len(parts) > 1 and '-' in parts[-1]:
-                        server_ports = parts[-1].strip()
+                        ports_range = parts[-1]
                 
-                if server_ports:
-                    p['server-ports'] = server_ports   # Clash Meta 标准字段
-                
+                if ports_range:
+                    p['ports'] = ports_range   # Clash Meta 正确字段是 "ports"
+
                 fp = make_fingerprint(p)
                 if fp not in servers_list:
                     extracted_proxies.append(p)
