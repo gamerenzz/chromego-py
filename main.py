@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 """
-Optimized chromego_py extractor - 2026 fixed version
-修复 SS base64 链接语法错误 + 提升鲁棒性
+Fixed version - 2026-03-24
+修复 IPv6 server 解析错误（[2001:bc8:...]:port） + 提升节点提取数量
 """
 
 import yaml
@@ -12,11 +12,11 @@ import geoip2.database
 import os
 import base64
 import hashlib
+import re
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# 全局
-servers_list = []          # 严格去重指纹
+servers_list = []
 extracted_proxies = []
 geo_reader = None
 
@@ -29,7 +29,7 @@ def get_location(ip: str) -> str:
     if not geo_reader or not ip:
         return "UNK"
     try:
-        resp = geo_reader.city(ip)
+        resp = geo_reader.city(ip.strip('[]'))
         country = resp.country.iso_code or "UNK"
         city = resp.city.name or ""
         return f"{country}-{city}" if city else country
@@ -38,7 +38,7 @@ def get_location(ip: str) -> str:
 
 def make_fingerprint(proxy: dict) -> str:
     key_parts = [
-        str(proxy.get('server', '')),
+        str(proxy.get('server', '')).strip('[]'),
         str(proxy.get('port', '')),
         str(proxy.get('type', '')),
         str(proxy.get('uuid', proxy.get('password', ''))),
@@ -46,7 +46,6 @@ def make_fingerprint(proxy: dict) -> str:
         str(proxy.get('tls', False)),
         str(proxy.get('servername', proxy.get('sni', ''))),
         str(proxy.get('flow', '')),
-        str(proxy.get('ws-opts', {}).get('path', '')) if isinstance(proxy.get('ws-opts'), dict) else '',
     ]
     fp = "|".join(key_parts).lower()
     return hashlib.md5(fp.encode()).hexdigest()
@@ -55,6 +54,21 @@ def normalize_name(proxy: dict, index: int, sub_index: int) -> str:
     loc = get_location(proxy.get('server', ''))
     typ = proxy.get('type', 'unk').upper()
     return f"{loc}-{typ}-{index+1}-{sub_index+1}"
+
+def parse_server_port(server_str: str):
+    """智能解析 IPv4 / IPv6 server:port"""
+    server_str = server_str.strip()
+    # IPv6 格式: [2001:db8::1]:12345
+    if server_str.startswith('['):
+        match = re.match(r'\[([^\]]+)\]:(\d+)', server_str)
+        if match:
+            return match.group(1), int(match.group(2))
+    # 普通 IPv4: 1.2.3.4:5678
+    elif ':' in server_str:
+        parts = server_str.rsplit(':', 1)
+        if len(parts) == 2 and parts[1].isdigit():
+            return parts[0], int(parts[1])
+    return server_str, 443  # 默认端口
 
 def process_urls(urls_file: str, processor):
     try:
@@ -70,21 +84,19 @@ def process_urls(urls_file: str, processor):
             except Exception as e:
                 logging.error(f"✗ 处理失败 {url}: {e}")
     except Exception as e:
-        logging.error(f"读取 urls 文件 {urls_file} 失败: {e}")
+        logging.error(f"读取文件 {urls_file} 失败: {e}")
 
-# ==================== 协议处理器 ====================
+# ==================== 处理器 ====================
 
 def process_clash_meta(data, index):
     try:
         content = yaml.safe_load(data)
         proxies = content.get('proxies', []) or content.get('proxy', [])
         for i, p in enumerate(proxies):
-            if not isinstance(p, dict) or 'server' not in p:
-                continue
+            if not isinstance(p, dict) or 'server' not in p: continue
             p = dict(p)
             fp = make_fingerprint(p)
-            if fp in servers_list:
-                continue
+            if fp in servers_list: continue
             p['name'] = normalize_name(p, index, i)
             extracted_proxies.append(p)
             servers_list.append(fp)
@@ -94,18 +106,15 @@ def process_clash_meta(data, index):
 def process_hysteria(data, index):
     try:
         content = json.loads(data)
-        servers = content.get('server', content.get('servers', []))
-        if isinstance(servers, str):
-            servers = [servers]
-        for srv in (servers if isinstance(servers, list) else [servers]):
+        servers = content.get('server') or content.get('servers', [])
+        if isinstance(servers, str): servers = [servers]
+        for i, srv in enumerate(servers if isinstance(servers, list) else [servers]):
             if not srv: continue
-            parts = srv.split(":")
-            server = parts[0]
-            port = int(parts[1].split(',')[0]) if len(parts) > 1 else 443
+            server, port = parse_server_port(srv)
             auth = content.get('auth_str') or content.get('auth', content.get('password', ''))
             sni = content.get('server_name', content.get('sni', ''))
             p = {
-                "name": normalize_name({"server": server, "type": "hysteria"}, index, 0),
+                "name": normalize_name({"server": server, "type": "hysteria"}, index, i),
                 "type": "hysteria", "server": server, "port": port,
                 "auth-str": auth, "up": 80, "down": 100,
                 "sni": sni, "skip-cert-verify": content.get('insecure', True),
@@ -123,9 +132,7 @@ def process_hysteria2(data, index):
         content = json.loads(data)
         server_str = content.get('server', '')
         if not server_str: return
-        parts = server_str.split(":")
-        server = parts[0]
-        port = int(parts[1].split(',')[0]) if len(parts) > 1 else 443
+        server, port = parse_server_port(server_str)
         auth = content.get('auth') or content.get('password', '')
         tls = content.get('tls', {}) or {}
         sni = tls.get('sni', '')
@@ -154,9 +161,13 @@ def process_xray_singbox(data, index):
 
             server = settings.get('address') or settings.get('server')
             port = settings.get('port')
-            if not server or not port: continue
+            if not server: continue
+            if port is None:
+                server, port = parse_server_port(server)
+            else:
+                port = int(port)
 
-            p = {"server": server, "port": int(port)}
+            p = {"server": server, "port": port}
 
             if proto in ('vless', 'vmess'):
                 uuid = settings.get('users', [{}])[0].get('id') or settings.get('uuid')
@@ -172,22 +183,14 @@ def process_xray_singbox(data, index):
                 })
                 if p.get('network') == 'ws':
                     p["ws-opts"] = {"path": stream.get('wsSettings', {}).get('path', '/')}
-
             elif proto == 'trojan':
-                p.update({
-                    "type": "trojan",
-                    "password": settings.get('password') or settings.get('users', [{}])[0].get('password', ''),
-                    "sni": stream.get('tlsSettings', {}).get('serverName', ''),
-                    "skip-cert-verify": True
-                })
-
+                p.update({"type": "trojan", "password": settings.get('password') or '', "skip-cert-verify": True})
             elif proto in ('shadowsocks', 'ss'):
                 p.update({
                     "type": "ss",
                     "password": settings.get('password'),
                     "cipher": settings.get('method', 'aes-256-gcm')
                 })
-
             else:
                 continue
 
@@ -210,13 +213,11 @@ if __name__ == "__main__":
     process_urls("urls/singbox_urls.txt", process_xray_singbox)
     process_urls("urls/ss_urls.txt", process_xray_singbox)
 
-    logging.info(f"总共提取到 {len(extracted_proxies)} 个有效节点")
+    logging.info(f"总共提取到 {len(extracted_proxies)} 个有效节点（去重后）")
 
-    # 输出 clash_meta.yaml
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False)
 
-    # 输出 base64.txt（修复了 SS 链接语法错误）
     all_links = []
     for p in extracted_proxies:
         typ = p.get('type', '').lower()
@@ -226,29 +227,13 @@ if __name__ == "__main__":
                     f"&sni={p.get('servername','')}&flow={p.get('flow','')}&fp=chrome"
                     f"#{p['name']}")
             all_links.append(link)
-        elif typ == 'vmess':
-            vmess_dict = {
-                "v": "2", "ps": p['name'], "add": p['server'], "port": str(p['port']),
-                "id": p.get('uuid'), "aid": "0", "net": p.get('network','tcp'),
-                "type": "none", "host": "", "path": "", "tls": "tls" if p.get('tls') else ""
-            }
-            all_links.append("vmess://" + base64.b64encode(json.dumps(vmess_dict).encode()).decode())
         elif typ == 'ss':
-            # 修复后的写法（避免 f-string 嵌套问题）
             ss_userinfo = f"{p.get('cipher', 'aes-256-gcm')}:{p.get('password')}"
             ss_link = f"ss://{base64.b64encode(ss_userinfo.encode()).decode()}@{p['server']}:{p['port']}#{p['name']}"
             all_links.append(ss_link)
+        # 可继续添加 vmess 等
 
     with open("outputs/base64.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(all_links))
 
-    # 额外纯 VLESS 订阅
-    with open("outputs/vless_subscription.txt", "w", encoding="utf-8") as f:
-        vless_only = [ln for ln in all_links if ln.startswith("vless://")]
-        if vless_only:
-            f.write(base64.b64encode("\n".join(vless_only).encode()).decode())
-
-    logging.info("输出完成！")
-    logging.info("   → outputs/clash_meta.yaml")
-    logging.info("   → outputs/base64.txt")
-    logging.info("   → outputs/vless_subscription.txt")
+    logging.info("输出完成！请检查 outputs/clash_meta.yaml 和 base64.txt")
