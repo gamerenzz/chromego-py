@@ -4,31 +4,22 @@ proxies:
   server: 2001:bc8:32d7:17b::2
   port: 11000
   password: dongtaiwang.com
-  sni: apple.com
+  sni: ''
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Y-FR-HYSTERIA-1
   type: hysteria
   server: 2001:bc8:32d7:17b::8
   port: 22000
   password: dongtaiwang.com
-  sni: ''
+  sni: apple.com
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Y-FR-HYSTERIA-1
   type: hysteria
   server: 2001:bc8:32d7:302::11
   port: 20088
   password: dongtaiwang.com
-  sni: ''
+  sni: apple.com
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - server: 5.83.129.90
   port: 443
   type: hysteria
@@ -239,62 +230,44 @@ proxies:
   server: 5.83.129.153
   port: 20088
   password: dongtaiwang.com
-  sni: apple.com
+  sni: ''
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Y-US-Providence-HYSTERIA-1
   type: hysteria
   server: 157.254.223.44
   port: 20833
   password: dongtaiwang.com
-  sni: apple.com
+  sni: ''
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Y-DE-HYSTERIA-1
   type: hysteria
   server: 5.83.129.90
   port: 54177
   password: dongtaiwang.com
-  sni: apple.com
-  skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
-- name: Y-UNK-HYSTERIA-1
-  type: hysteria
-  server: 157.254.223.43:27921,28000-29000
-  port: 443
-  password: dongtaiwang.com
   sni: ''
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
+- name: Y-US-Providence-HYSTERIA-1
+  type: hysteria
+  server: 157.254.223.43
+  port: 27921
+  password: dongtaiwang.com
+  sni: www.bing.com
+  skip-cert-verify: true
   ports: 28000-29000
 - name: Y-DE-Frankfurt am Main-HYSTERIA-1
   type: hysteria
   server: 2a10:3c80:0:f::2
   port: 39463
   password: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
-  sni: ''
+  sni: www.microsoft.com
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Y-FR-HYSTERIA-1
   type: hysteria
   server: 2001:bc8:32d7:17b::3
   port: 22000
   password: dongtaiwang.com
-  sni: ''
+  sni: www.microsoft.com
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Y-UNK-HYSTERIA-1
   type: hysteria
   server: fan.193919.xyz
@@ -302,9 +275,6 @@ proxies:
   password: dongtaiwang.com
   sni: fan.193919.xyz
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Y-DE-HYSTERIA-1
   type: hysteria
   server: 5.83.129.153
@@ -312,9 +282,6 @@ proxies:
   password: dongtaiwang.com
   sni: bing.com
   skip-cert-verify: true
-  alpn: h3
-  up: 50
-  down: 100
 - name: Z-IR-VLESS-1
   server: 31.58.50.225
   port: 8443
