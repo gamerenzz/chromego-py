@@ -1,4 +1,5 @@
 https://gitlab.com/free9999/ipupdate/-/raw/master/singbox/config.json
-https://www.githubip.xyz/Alvin9999/pac2/master/singbox/config.json
-https://fastly.jsdelivr.net/gh/Alvin9999/pac2@latest/singbox/config.json
 https://www.gitlabip.xyz/Alvin9999/pac2/master/singbox/1/config.json
+
+# 额外 Sing-box 来源
+https://raw.githubusercontent.com/snakem982/proxypool/main/source/singbox.json
