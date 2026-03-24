@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 """
-稳定最终版 - 解决 NekoBox 跳跃端口识别问题 + 完整 Hysteria1 参数
+最终稳定修复版 - 彻底解决 Hysteria1/Hysteria2 跳跃端口 + 参数丢失问题
 Y系列 → sources.txt (前缀 Y-)
 Z系列 → sources-j.txt (前缀 Z-)
 """
@@ -41,10 +41,11 @@ def make_fingerprint(p):
     return hashlib.md5(key.lower().encode()).hexdigest()
 
 def parse_server_port(srv):
+    """严格分离主端口和跳跃端口"""
     srv = str(srv).strip()
-    main_port = 443
     ports_range = None
 
+    # 处理 "ip:port,range" 或 "ip:port,range" 格式
     if ',' in srv:
         parts = [p.strip() for p in srv.split(',')]
         main_part = parts[0]
@@ -60,7 +61,7 @@ def parse_server_port(srv):
         parts = srv.rsplit(':', 1)
         if len(parts) == 2 and parts[1].isdigit():
             return parts[0], int(parts[1]), ports_range
-    return srv, main_port, ports_range
+    return srv, 443, ports_range
 
 def process_file(file_path, prefix):
     try:
@@ -119,9 +120,10 @@ def process_json(data, prefix):
                     "server": server,
                     "port": main_port,                       # 主端口
                     "password": content.get('auth') or content.get('password', content.get('auth_str', '')),
+                    "auth-str": content.get('auth_str') or content.get('auth') or content.get('password', ''),
                     "sni": content.get('sni') or content.get('peer') or content.get('server_name', ''),
                     "skip-cert-verify": content.get('insecure', True),
-                    "alpn": content.get('alpn', ['h3'])[0] if isinstance(content.get('alpn'), list) else content.get('alpn', 'h3')
+                    "alpn": content.get('alpn', 'h3')
                 }
                 
                 # Hysteria1 特有参数
@@ -129,7 +131,7 @@ def process_json(data, prefix):
                     p["up"] = content.get('upmbps') or content.get('up') or 100
                     p["down"] = content.get('downmbps') or content.get('down') or 100
                 
-                # 跳跃端口 - 使用 Clash Meta 标准字段 "ports"
+                # 跳跃端口 - 使用标准字段 "ports"
                 if ports_range:
                     p['ports'] = ports_range
                 elif content.get('server_ports'):
@@ -142,7 +144,7 @@ def process_json(data, prefix):
                     extracted_proxies.append(p)
                     servers_list.append(fp)
 
-        # outbounds 处理
+        # outbounds 处理（保留）
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             proto = (ob.get('protocol') or ob.get('type') or '').lower()
