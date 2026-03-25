@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 """
-2026 最终优化版 - 重点修复 hy2 跳跃端口 28000-29000 + 最大化保留原有节点
+2026 最终完善版 - 彻底修复 hy2 跳跃端口 28000-29000 + 最大化节点保留
 """
 
 import yaml
@@ -35,14 +35,13 @@ def get_location(ip):
         return "UNK"
 
 def make_fingerprint(p):
-    # 加入 ports 信息，避免跳跃端口节点被误判重复
     key = f"{p.get('server')}|{p.get('port')}|{p.get('ports')}|{p.get('type')}|{p.get('uuid') or p.get('password') or p.get('auth_str')}"
     return hashlib.md5(key.lower().encode()).hexdigest()
 
 def normalize_proxy(raw: dict) -> dict:
     p = dict(raw)
 
-    # === sing-box vnext 处理（修复前两个节点 server:null）===
+    # sing-box vnext 处理
     if isinstance(p.get('settings'), dict) and isinstance(p['settings'].get('vnext'), list):
         vnext = p['settings']['vnext'][0]
         p['server'] = vnext.get('address') or vnext.get('server')
@@ -60,13 +59,10 @@ def normalize_proxy(raw: dict) -> dict:
             p['tls'] = True
             p['servername'] = r.get('serverName')
             p['client-fingerprint'] = r.get('fingerprint', 'chrome')
-            p['reality-opts'] = {
-                'public-key': r.get('publicKey'),
-                'short-id': r.get('shortId', '')
-            }
+            p['reality-opts'] = {'public-key': r.get('publicKey'), 'short-id': r.get('shortId', '')}
             p.setdefault('flow', 'xtls-rprx-vision')
 
-    # === 通用字段映射 ===
+    # 通用映射
     p.setdefault('server', p.get('address') or p.get('server') or p.get('server_addr'))
     p.setdefault('port', p.get('port') or p.get('server_port') or 443)
     p.setdefault('uuid', p.get('uuid') or p.get('id'))
@@ -80,22 +76,29 @@ def normalize_proxy(raw: dict) -> dict:
     if typ:
         p['type'] = typ
 
-    # === 重点修复：跳跃端口处理（hy2 28000-29000）===
-    ports_str = None
-    if isinstance(p.get('server'), str) and (',' in p['server'] or '-' in p['server']):
-        server_part, port_part, ports_str = parse_server_port(p['server'])
+    # ====================== 重点修复：跳跃端口 ======================
+    ports_candidates = [
+        p.get('ports'), p.get('portRange'), p.get('port_range'),
+        p.get('server_ports'), p.get('server_port_range')
+    ]
+    ports_str = next((str(x).strip() for x in ports_candidates if x), None)
+
+    # 如果 server 字段本身包含逗号或范围（常见于 sing-box 订阅）
+    if not ports_str and isinstance(p.get('server'), str) and (',' in p['server'] or '-' in p['server']):
+        server_part, port_part, extracted_ports = parse_server_port(p['server'])
         p['server'] = server_part
         if port_part:
             p['port'] = port_part
-    if not ports_str:
-        ports_str = p.get('ports') or p.get('portRange') or p.get('port_range')
+        if extracted_ports:
+            ports_str = extracted_ports
 
-    if ports_str:
-        p['ports'] = str(ports_str).strip()
-        p.pop('portRange', None)
-        p.pop('port_range', None)
+    if ports_str and re.search(r'\d+-\d+', ports_str):
+        p['ports'] = ports_str
+        # 清理旧字段
+        for k in ['portRange', 'port_range', 'server_ports', 'server_port_range']:
+            p.pop(k, None)
 
-    # === Hysteria / Hysteria2 标准化 ===
+    # ====================== Hysteria / Hysteria2 ======================
     if typ == 'hysteria':
         p['auth_str'] = p.get('auth_str') or p.get('password', '')
         up_val = p.get('up_mbps') or p.get('up') or 100
@@ -111,14 +114,14 @@ def normalize_proxy(raw: dict) -> dict:
         p['down'] = f"{down_val} Mbps".replace(' Mbps Mbps', ' Mbps')
         p.setdefault('alpn', ['h3'])
 
-    # === 清理无效字段 ===
+    # 清理无效字段
     for k in ['tag', 'settings', 'streamSettings', 'mux', 'up_mbps', 'down_mbps']:
         p.pop(k, None)
     for k in list(p.keys()):
         if p[k] is None or p[k] == '':
             p.pop(k, None)
 
-    # === 2026 最新规则补全 ===
+    # 2026 最新规则补全
     if typ in ('vless', 'vmess'):
         p.setdefault('client-fingerprint', 'chrome')
     if typ == 'tuic':
@@ -139,7 +142,7 @@ def normalize_proxy(raw: dict) -> dict:
     return p
 
 
-def parse_server_port(srv):   # 专门用于跳跃端口解析
+def parse_server_port(srv):
     srv = str(srv).strip()
     ports_range = None
     if ',' in srv or '-' in srv:
@@ -148,7 +151,6 @@ def parse_server_port(srv):   # 专门用于跳跃端口解析
         if len(parts) > 1 and re.search(r'\d+-\d+', parts[-1]):
             ports_range = parts[-1]
         srv = main
-    # IPv6
     if srv.startswith('['):
         m = re.match(r'\[([^\]]+)\]:(\d+)', srv)
         if m:
@@ -160,7 +162,6 @@ def parse_server_port(srv):   # 专门用于跳跃端口解析
     return srv, 443, ports_range
 
 
-# ==================== 下面三个函数基本不变 ====================
 def process_file(file_path, prefix):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -214,12 +215,12 @@ def process_json(data, prefix):
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    logging.info("=== 2026 最终优化版（重点修复跳跃端口）开始提取 ===")
+    logging.info("=== 2026 最终完善版（跳跃端口已加强）开始提取 ===")
     
     process_file("urls/sources.txt", "Y-")
     process_file("urls/sources-j.txt", "Z-")
 
-    logging.info(f"✅ 总共提取到 {len(extracted_proxies)} 个有效节点（已恢复 hy2 跳跃端口节点）")
+    logging.info(f"✅ 总共提取到 {len(extracted_proxies)} 个有效节点（跳跃端口节点已恢复）")
 
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
