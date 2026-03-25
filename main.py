@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 """
-最终增强版 - 2026 最新规则支持 + 完美兼容原始混乱订阅 + 提取更多可用节点
+2026 最终修复版 - 解决 sing-box 节点 server:null + 保留更多原有节点
 """
 
 import yaml
@@ -14,14 +14,14 @@ import re
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-servers_list = []      # 指纹去重
+servers_list = []
 extracted_proxies = []
 geo_reader = None
 
 try:
     geo_reader = geoip2.database.Reader('GeoLite2-City.mmdb')
 except Exception:
-    logging.warning("GeoLite2-City.mmdb 未找到，位置将显示 UNK")
+    logging.warning("GeoLite2-City.mmdb 未找到，位置显示 UNK")
 
 def get_location(ip):
     if not geo_reader or not ip:
@@ -35,91 +35,115 @@ def get_location(ip):
         return "UNK"
 
 def make_fingerprint(p):
-    """更全面的去重指纹，包含 uuid、网络、路径等关键字段"""
-    key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|{p.get('password') or p.get('auth_str','') or p.get('uuid','')}|{p.get('network','')}|{p.get('path','')}"
+    key = f"{p.get('server')}|{p.get('port')}|{p.get('type')}|{p.get('uuid') or p.get('password') or p.get('auth_str')}|{p.get('network') or ''}"
     return hashlib.md5(key.lower().encode()).hexdigest()
 
-def normalize_proxy(p: dict) -> dict:
-    """核心标准化函数：依据原始文件字段 + 最新规则"""
-    p = dict(p)  # 复制避免修改原数据
+def normalize_proxy(raw: dict) -> dict:
+    p = dict(raw)
 
-    typ = p.get('type', '').lower()
+    # === 重点修复：sing-box vnext + streamSettings 处理 ===
+    if isinstance(p.get('settings'), dict) and isinstance(p.get('settings', {}).get('vnext'), list):
+        vnext = p['settings']['vnext'][0]
+        p['server'] = vnext.get('address') or vnext.get('server')
+        p['port'] = vnext.get('port')
+        if isinstance(vnext.get('users'), list) and vnext['users']:
+            user = vnext['users'][0]
+            p['uuid'] = user.get('id')
+            p['flow'] = user.get('flow')
+            p['encryption'] = user.get('encryption')
 
-    # 1. Hysteria1 / Hysteria2 字段统一
-    if typ == 'hysteria':
-        p['auth_str'] = p.pop('password', None) or p.pop('auth-str', None) or p.get('auth_str', '')
-        p.setdefault('alpn', ['h3'])
-        p['up'] = f"{p.get('up', 100)} Mbps"
-        p['down'] = f"{p.get('down', 100)} Mbps"
-    elif typ == 'hysteria2':
-        p['password'] = p.pop('auth_str', None) or p.pop('auth-str', None) or p.pop('password', '')
-        p.setdefault('alpn', ['h3'])
-        p['up'] = f"{p.get('up', 55)} Mbps"
-        p['down'] = f"{p.get('down', 55)} Mbps"
-        # 新增 2026 支持：obfs、hop-interval
-        if p.get('obfs') or p.get('obfs-password'):
-            p.setdefault('obfs', 'salamander')
-
-    # 2. alpn 强制转列表
-    if isinstance(p.get('alpn'), str):
-        p['alpn'] = [p['alpn']]
-
-    # 3. VLESS Reality 最新规则
-    if typ == 'vless':
-        p.setdefault('udp', True)
-        p.setdefault('client-fingerprint', 'chrome')
-        # reality 对象转 reality-opts
-        if 'reality' in p:
-            reality = p.pop('reality')
+    if isinstance(p.get('streamSettings'), dict):
+        stream = p['streamSettings']
+        p['network'] = stream.get('network')
+        if stream.get('security') == 'reality' and isinstance(stream.get('realitySettings'), dict):
+            reality = stream['realitySettings']
+            p['tls'] = True
+            p['servername'] = reality.get('serverName') or reality.get('server_name')
+            p['client-fingerprint'] = reality.get('fingerprint', 'chrome')
             p['reality-opts'] = {
-                'public-key': reality.get('public-key') or reality.get('public_key'),
-                'short-id': reality.get('short-id') or reality.get('short_id', '')
+                'public-key': reality.get('publicKey') or reality.get('public_key'),
+                'short-id': reality.get('shortId') or reality.get('short_id', '')
             }
-        if 'reality-opts' in p:
-            p.setdefault('flow', 'xtls-rprx-vision')
-        # smux + brutal-opts（原始文件中常见）
-        if 'smux' not in p:
-            p['smux'] = {'enabled': True, 'protocol': 'h2mux', 'max-connections': 1, 'min-streams': 4, 'padding': True}
-            p.setdefault('brutal-opts', {'enabled': True, 'up': 50, 'down': 100})
+            if not p.get('flow'):
+                p['flow'] = 'xtls-rprx-vision'
 
-    # 4. TUIC 最新规则
+    # === 通用字段映射（兼容 sing-box 和混乱 Clash）===
+    p.setdefault('server', p.get('address') or p.get('server') or p.get('server_addr'))
+    p.setdefault('port', p.get('port') or p.get('server_port') or 443)
+    p.setdefault('uuid', p.get('uuid') or p.get('id'))
+    p.setdefault('password', p.get('password') or p.get('auth') or p.get('auth_str'))
+    p.setdefault('auth_str', p.get('auth_str') or p.get('auth') or p.get('password'))
+    p.setdefault('servername', p.get('servername') or p.get('sni') or p.get('peer') or p.get('server_name'))
+    p.setdefault('skip-cert-verify', p.get('skip-cert-verify') or p.get('insecure', True))
+    p.setdefault('udp', True)
+
+    typ = (p.get('type') or p.get('protocol') or '').lower().strip()
+    if typ:
+        p['type'] = typ
+
+    # === Hysteria / Hysteria2 处理 ===
+    if typ == 'hysteria':
+        p['auth_str'] = p.get('auth_str') or p.get('password', '')
+        up_val = p.get('up_mbps') or p.get('up') or 100
+        down_val = p.get('down_mbps') or p.get('down') or 100
+        p['up'] = f"{up_val} Mbps" if not str(up_val).endswith(' Mbps') else str(up_val)
+        p['down'] = f"{down_val} Mbps" if not str(down_val).endswith(' Mbps') else str(down_val)
+        p['alpn'] = p.get('alpn') or ['h3']
+    elif typ == 'hysteria2':
+        p['password'] = p.get('password') or p.get('auth_str', '')
+        up_val = p.get('up_mbps') or p.get('up') or 55
+        down_val = p.get('down_mbps') or p.get('down') or 55
+        p['up'] = f"{up_val} Mbps" if not str(up_val).endswith(' Mbps') else str(up_val)
+        p['down'] = f"{down_val} Mbps" if not str(down_val).endswith(' Mbps') else str(down_val)
+        p['alpn'] = p.get('alpn') or ['h3']
+
+    # === 清理重复单位和无效字段 ===
+    for k in list(p.keys()):
+        if isinstance(p[k], str) and 'Mbps Mbps' in p[k]:
+            p[k] = p[k].replace(' Mbps Mbps', ' Mbps')
+        if k in ['tag', 'settings', 'streamSettings', 'mux'] or p[k] is None:
+            p.pop(k, None)
+
+    # === 最新规则自动补全 ===
+    if typ in ('vless', 'vmess'):
+        p.setdefault('client-fingerprint', 'chrome')
     if typ == 'tuic':
-        p.setdefault('alpn', ['h3'])
         p.setdefault('udp-relay-mode', 'native')
         p.setdefault('congestion-controller', 'bbr')
-        p.setdefault('skip-cert-verify', True)
-
-    # 5. 通用最新规则（2026 mihomo 推荐）
-    p.setdefault('skip-cert-verify', True)
-    p.setdefault('udp', True)
-    if p.get('tls') is True or p.get('network') in ('tcp', 'ws', 'httpupgrade'):
+    if p.get('reality-opts') or p.get('tls') is True:
         p.setdefault('client-fingerprint', 'chrome')
+        p.setdefault('flow', p.get('flow') or 'xtls-rprx-vision')
 
-    # 6. 端口跳跃统一为 ports
-    if 'portRange' in p or 'ports' in p:
-        p['ports'] = p.pop('portRange', None) or p.get('ports')
+    # VLESS Reality 常用 smux + brutal
+    if typ == 'vless' and p.get('reality-opts'):
+        p.setdefault('smux', {'enabled': True, 'protocol': 'h2mux', 'max-connections': 1, 'min-streams': 4, 'padding': True})
+        p.setdefault('brutal-opts', {'enabled': True, 'up': 50, 'down': 100})
+
+    # alpn 强制列表
+    if isinstance(p.get('alpn'), str):
+        p['alpn'] = [p['alpn']]
+    elif not p.get('alpn'):
+        p['alpn'] = ['h3']
 
     return p
 
+# process_file、process_clash、process_json 函数基本不变（只微调了 items 获取方式，增加容错）
 def process_file(file_path, prefix):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-        
         for url in urls:
             try:
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=25) as resp:
+                with urllib.request.urlopen(req, timeout=30) as resp:
                     data = resp.read().decode('utf-8', errors='ignore')
-
                 if url.endswith(('.yaml', '.yml')):
                     process_clash(data, prefix)
                 else:
                     process_json(data, prefix)
-
                 logging.info(f"✓ {prefix}系列 处理完成: {url}")
             except Exception as e:
-                logging.error(f"✗ {prefix}系列 处理失败 {url}: {e}")
+                logging.error(f"✗ 处理失败 {url}: {e}")
     except Exception as e:
         logging.error(f"读取 {file_path} 失败: {e}")
 
@@ -128,61 +152,49 @@ def process_clash(data, prefix):
         content = yaml.safe_load(data)
         proxies = content.get('proxies', []) or content.get('proxy', [])
         for i, raw in enumerate(proxies):
-            if not isinstance(raw, dict) or not raw.get('server'):
+            if not isinstance(raw, dict):
                 continue
             p = normalize_proxy(raw)
+            if not p.get('server'):
+                continue
             fp = make_fingerprint(p)
             if fp in servers_list:
                 continue
-            p['name'] = f"{prefix}{get_location(p.get('server'))}-{p.get('type','unk').upper()}-{i+1}"
+            p['name'] = f"{prefix}{get_location(p.get('server'))}-{p.get('type','UNK').upper()}-{i+1}"
             extracted_proxies.append(p)
             servers_list.append(fp)
     except Exception as e:
-        logging.error(f"Clash 处理异常: {e}")
+        logging.error(f"Clash YAML 处理异常: {e}")
 
 def process_json(data, prefix):
     try:
         content = json.loads(data)
-        # 支持 sing-box / v2ray 风格 outbounds
-        outbounds = content.get('outbounds', []) or content.get('server', []) or content.get('servers', [])
-        if isinstance(outbounds, (str, dict)):
-            outbounds = [outbounds]
-
-        for i, ob in enumerate(outbounds):
-            if not isinstance(ob, dict):
+        items = content.get('outbounds', []) or content.get('proxies', []) or [content]
+        for i, raw in enumerate(items):
+            if not isinstance(raw, dict):
                 continue
-            typ = (ob.get('type') or ob.get('protocol') or '').lower()
-            if typ not in ('hysteria', 'hysteria2', 'vless', 'vmess', 'tuic', 'trojan', 'shadowsocks'):
+            p = normalize_proxy(raw)
+            if not p.get('server'):
                 continue
-
-            p = normalize_proxy(ob)
-            p['type'] = typ
-
-            # sing-box 常见字段映射
-            p.setdefault('server', ob.get('server') or ob.get('address'))
-            p.setdefault('port', ob.get('port') or ob.get('server_port', 443))
-            p.setdefault('password', ob.get('password') or ob.get('users', [{}])[0].get('password'))
-            p.setdefault('uuid', ob.get('uuid') or ob.get('users', [{}])[0].get('id'))
-
             fp = make_fingerprint(p)
-            if fp not in servers_list:
-                p['name'] = f"{prefix}{get_location(p.get('server'))}-{typ.upper()}-{i+1}"
-                extracted_proxies.append(p)
-                servers_list.append(fp)
-
+            if fp in servers_list:
+                continue
+            p['name'] = f"{prefix}{get_location(p.get('server'))}-{p.get('type','UNK').upper()}-{i+1}"
+            extracted_proxies.append(p)
+            servers_list.append(fp)
     except Exception as e:
         logging.error(f"JSON 处理异常: {e}")
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    logging.info("=== 开始提取节点（2026 增强版） ===")
+    logging.info("=== 2026 最终修复版节点提取开始 ===")
     
     process_file("urls/sources.txt", "Y-")
     process_file("urls/sources-j.txt", "Z-")
 
-    logging.info(f"总共提取到 {len(extracted_proxies)} 个有效节点（已自动标准化最新规则）")
+    logging.info(f"✅ 总共提取到 {len(extracted_proxies)} 个有效节点（已修复 sing-box server:null 问题）")
 
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
 
-    logging.info("✅ clash_meta.yaml 已生成！可直接导入 Clash Meta / Verge Rev")
+    logging.info("🎉 输出完成：outputs/clash_meta.yaml")
