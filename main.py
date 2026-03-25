@@ -1,9 +1,8 @@
 # -*- coding: UTF-8 -*-
 """
-ChromeGo Enhanced v2.6 - 最终完整可直接运行版
-参考 vfarid/v2ray-worker v2.4 + 真实可用性测试
-Y系列：完全保留原逻辑，不测试
-Z系列 + 通用源：只保留测试通过的节点
+ChromeGo Enhanced v2.7 - 最终定制版
+Y系列 (sources.txt)：完全保留原始提取逻辑，不测试
+Z系列 (sources-j.txt)：使用增强解析 + 真实连通性测试，只保留可用节点
 """
 
 import yaml
@@ -46,7 +45,7 @@ def make_fingerprint(p):
     return hashlib.md5(key.lower().encode()).hexdigest()
 
 def test_node_availability(proxy, timeout=8):
-    """简单 TCP 连通性 + 延迟测试"""
+    """TCP 连通性 + 延迟测试"""
     server = proxy.get('server')
     port = int(proxy.get('port', 443))
     if not server or not isinstance(server, str):
@@ -68,16 +67,14 @@ def preprocess_subscription(data: str):
         padding = '=' * (-len(content) % 4)
         decoded = base64.b64decode(content + padding, validate=False).decode('utf-8', errors='ignore')
         if any(decoded.startswith(prefix) for prefix in ('vmess://', 'vless://', 'trojan://', 'ss://', 'hysteria2://', 'hy2://')):
-            logging.info("✓ Base64 解码成功")
             return decoded
     except:
         pass
     if any(line.strip().startswith(('vmess://', 'vless://', 'trojan://', 'ss://', 'hysteria2://', 'hy2://')) for line in content.splitlines()[:10]):
-        logging.info("✓ 检测到纯文本节点列表")
         return content
     return content
 
-# ====================== 强力通用节点解析器 ======================
+# ====================== 增强节点解析器（VMess/VLESS/HY2/Trojan） ======================
 def parse_general_node(line: str, prefix: str, index: int):
     line = line.strip()
     if not line or line.startswith('#'):
@@ -158,8 +155,8 @@ def parse_general_node(line: str, prefix: str, index: int):
         pass
     return None
 
-# ====================== 通用源处理 ======================
-def process_general(url, prefix, do_test=False):
+# ====================== Z系列增强处理（带测试） ======================
+def process_z_enhanced(url, prefix):
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=30) as resp:
@@ -170,19 +167,23 @@ def process_general(url, prefix, do_test=False):
 
         added = 0
         for i, line in enumerate(lines):
+            # 优先尝试新解析器
             node = parse_general_node(line, prefix, i + 1)
             if not node or not node.get('server'):
                 continue
+
             fp = make_fingerprint(node)
             if fp in servers_list:
                 continue
 
-            if do_test:
-                is_alive, delay = test_node_availability(node)
-                if not is_alive or delay > 800:
-                    continue
-                node['name'] = f"{node['name']}-{delay}ms"
+            # 真实可用性测试
+            is_alive, delay = test_node_availability(node)
+            if not is_alive or delay > 800:   # 可根据需要调整阈值
+                continue
 
+            node['name'] = f"{node['name']}-{delay}ms"
+            
+            # SS 节点限量
             if node.get('type') == 'ss' and len([n for n in extracted_proxies if n.get('type') == 'ss']) > 30:
                 continue
 
@@ -190,11 +191,11 @@ def process_general(url, prefix, do_test=False):
             servers_list.append(fp)
             added += 1
 
-        logging.info(f"✓ {prefix} 通用源处理完成: {url} → 新增 {added} 个节点")
+        logging.info(f"✓ Z系列增强处理完成: {url} → 新增 {added} 个可用节点")
     except Exception as e:
-        logging.error(f"✗ 通用源处理失败 {url}: {e}")
+        logging.error(f"✗ Z系列增强处理失败 {url}: {e}")
 
-# ====================== 原有函数（完全保留，一字不改） ======================
+# ====================== 原有函数完全保留 ======================
 def process_file(file_path, prefix):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -213,7 +214,7 @@ def process_file(file_path, prefix):
                 else:
                     process_json(processed_data, prefix)
 
-                logging.info(f"✓ {prefix}系列 ChromeGo 处理完成: {url}")
+                logging.info(f"✓ {prefix}系列 ChromeGo 原逻辑处理完成: {url}")
             except Exception as e:
                 logging.error(f"✗ {prefix}系列 处理失败 {url}: {e}")
     except Exception as e:
@@ -283,7 +284,7 @@ def process_json(data, prefix):
                     extracted_proxies.append(p)
                     servers_list.append(fp)
 
-        # outbounds 处理保持不变
+        # outbounds 处理
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             proto = (ob.get('protocol') or ob.get('type') or '').lower()
@@ -326,24 +327,25 @@ def parse_server_port(srv):
 # ====================== 主程序 ======================
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    logging.info("=== ChromeGo Enhanced v2.6 最终完整版启动 ===")
+    logging.info("=== ChromeGo Enhanced v2.7 启动 ===")
+    logging.info("Y系列 (sources.txt)：使用原始逻辑，不测试")
+    logging.info("Z系列 (sources-j.txt)：使用增强解析 + 可用性测试，只保留可用节点")
 
-    # Y系列：完全不动
+    # Y系列：完全使用原始逻辑
     process_file("urls/sources.txt", "Y-")
 
-    # Z系列原提取
-    process_file("urls/sources-j.txt", "Z-")
-
-    # 通用源（Y不测试，Z测试过滤）
+    # Z系列：使用增强逻辑 + 测试
     try:
-        with open("urls/general_sources.txt", 'r', encoding='utf-8') as f:
-            general_urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        with open("urls/sources-j.txt", 'r', encoding='utf-8') as f:
+            z_urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
-        for url in general_urls:
-            process_general(url, "Y-", do_test=False)
-            process_general(url, "Z-", do_test=True)
+        for url in z_urls:
+            # 先尝试用增强解析 + 测试
+            process_z_enhanced(url, "Z-")
+            # 如果需要，也可以保留原有 process_json/process_clash 作为补充
+            # 但按你要求，Z系列统一走新逻辑
     except Exception as e:
-        logging.error(f"读取 general_sources.txt 失败: {e}")
+        logging.error(f"读取 sources-j.txt 失败: {e}")
 
     logging.info(f"最终保留 {len(extracted_proxies)} 个节点（Z系列已过滤不可用节点）")
 
