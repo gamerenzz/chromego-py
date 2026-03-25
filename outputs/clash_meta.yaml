@@ -324,28 +324,3 @@ proxies:
   alpn: h3
   up: 100
   down: 100
-- name: Z-CN-TROJAN-1
-  type: trojan
-  server: 36.156.102.115
-  port: 26876
-  password: BxceQaOe
-  skip-cert-verify: true
-- name: Z-UNK-VMESS-2
-  type: vmess
-  server: v29.heduian.link
-  port: 30829
-  sni: ''
-  uuid: cbb3f877-d1fb-344c-87a9-d153bffd5484
-  cipher: auto
-  network: ws
-  ws-opts:
-    path: /oooo
-    headers:
-      host: ocbc.com
-  alterId: 2
-- name: Z-MD-Chisinau-SS-3
-  type: ss
-  server: 185.153.197.5
-  port: 989
-  cipher: aes-256-cfb
-  password: f8f7aCzcPKbsF8p3
