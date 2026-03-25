@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 """
-2026 最终完善版 - 彻底修复 hy2 跳跃端口 28000-29000 + 最大化节点保留
+最终修正版 - 自动判断 hysteria / hysteria2 + 正确处理跳跃端口
 """
 
 import yaml
@@ -20,8 +20,8 @@ geo_reader = None
 
 try:
     geo_reader = geoip2.database.Reader('GeoLite2-City.mmdb')
-except Exception:
-    logging.warning("GeoLite2-City.mmdb 未找到")
+except:
+    logging.warning("GeoLite2-City.mmdb not found")
 
 def get_location(ip):
     if not geo_reader or not ip:
@@ -30,127 +30,24 @@ def get_location(ip):
         resp = geo_reader.city(str(ip).strip('[]'))
         c = resp.country.iso_code or "UNK"
         city = resp.city.name or ""
-        return f"{c}-{city.replace(' ', '')}" if city else c
+        return f"{c}-{city}" if city else c
     except:
         return "UNK"
 
 def make_fingerprint(p):
-    key = f"{p.get('server')}|{p.get('port')}|{p.get('ports')}|{p.get('type')}|{p.get('uuid') or p.get('password') or p.get('auth_str')}"
+    key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|{p.get('password') or p.get('auth-str','')}"
     return hashlib.md5(key.lower().encode()).hexdigest()
-
-def normalize_proxy(raw: dict) -> dict:
-    p = dict(raw)
-
-    # sing-box vnext 处理
-    if isinstance(p.get('settings'), dict) and isinstance(p['settings'].get('vnext'), list):
-        vnext = p['settings']['vnext'][0]
-        p['server'] = vnext.get('address') or vnext.get('server')
-        p['port'] = vnext.get('port')
-        if isinstance(vnext.get('users'), list) and vnext['users']:
-            user = vnext['users'][0]
-            p['uuid'] = user.get('id')
-            p['flow'] = user.get('flow')
-
-    if isinstance(p.get('streamSettings'), dict):
-        stream = p['streamSettings']
-        p['network'] = stream.get('network')
-        if stream.get('security') == 'reality' and isinstance(stream.get('realitySettings'), dict):
-            r = stream['realitySettings']
-            p['tls'] = True
-            p['servername'] = r.get('serverName')
-            p['client-fingerprint'] = r.get('fingerprint', 'chrome')
-            p['reality-opts'] = {'public-key': r.get('publicKey'), 'short-id': r.get('shortId', '')}
-            p.setdefault('flow', 'xtls-rprx-vision')
-
-    # 通用映射
-    p.setdefault('server', p.get('address') or p.get('server') or p.get('server_addr'))
-    p.setdefault('port', p.get('port') or p.get('server_port') or 443)
-    p.setdefault('uuid', p.get('uuid') or p.get('id'))
-    p.setdefault('password', p.get('password') or p.get('auth') or p.get('auth_str'))
-    p.setdefault('auth_str', p.get('auth_str') or p.get('auth') or p.get('password'))
-    p.setdefault('servername', p.get('servername') or p.get('sni') or p.get('peer') or p.get('server_name'))
-    p.setdefault('skip-cert-verify', p.get('skip-cert-verify') or p.get('insecure', True))
-    p.setdefault('udp', True)
-
-    typ = (p.get('type') or p.get('protocol') or '').lower().strip()
-    if typ:
-        p['type'] = typ
-
-    # ====================== 重点修复：跳跃端口 ======================
-    ports_candidates = [
-        p.get('ports'), p.get('portRange'), p.get('port_range'),
-        p.get('server_ports'), p.get('server_port_range')
-    ]
-    ports_str = next((str(x).strip() for x in ports_candidates if x), None)
-
-    # 如果 server 字段本身包含逗号或范围（常见于 sing-box 订阅）
-    if not ports_str and isinstance(p.get('server'), str) and (',' in p['server'] or '-' in p['server']):
-        server_part, port_part, extracted_ports = parse_server_port(p['server'])
-        p['server'] = server_part
-        if port_part:
-            p['port'] = port_part
-        if extracted_ports:
-            ports_str = extracted_ports
-
-    if ports_str and re.search(r'\d+-\d+', ports_str):
-        p['ports'] = ports_str
-        # 清理旧字段
-        for k in ['portRange', 'port_range', 'server_ports', 'server_port_range']:
-            p.pop(k, None)
-
-    # ====================== Hysteria / Hysteria2 ======================
-    if typ == 'hysteria':
-        p['auth_str'] = p.get('auth_str') or p.get('password', '')
-        up_val = p.get('up_mbps') or p.get('up') or 100
-        down_val = p.get('down_mbps') or p.get('down') or 100
-        p['up'] = f"{up_val} Mbps".replace(' Mbps Mbps', ' Mbps')
-        p['down'] = f"{down_val} Mbps".replace(' Mbps Mbps', ' Mbps')
-        p.setdefault('alpn', ['h3'])
-    elif typ == 'hysteria2':
-        p['password'] = p.get('password') or p.get('auth_str', '')
-        up_val = p.get('up_mbps') or p.get('up') or 55
-        down_val = p.get('down_mbps') or p.get('down') or 55
-        p['up'] = f"{up_val} Mbps".replace(' Mbps Mbps', ' Mbps')
-        p['down'] = f"{down_val} Mbps".replace(' Mbps Mbps', ' Mbps')
-        p.setdefault('alpn', ['h3'])
-
-    # 清理无效字段
-    for k in ['tag', 'settings', 'streamSettings', 'mux', 'up_mbps', 'down_mbps']:
-        p.pop(k, None)
-    for k in list(p.keys()):
-        if p[k] is None or p[k] == '':
-            p.pop(k, None)
-
-    # 2026 最新规则补全
-    if typ in ('vless', 'vmess'):
-        p.setdefault('client-fingerprint', 'chrome')
-    if typ == 'tuic':
-        p.setdefault('udp-relay-mode', 'native')
-        p.setdefault('congestion-controller', 'bbr')
-    if p.get('reality-opts') or p.get('tls') is True:
-        p.setdefault('client-fingerprint', 'chrome')
-
-    if typ == 'vless' and p.get('reality-opts'):
-        p.setdefault('smux', {'enabled': True, 'protocol': 'h2mux', 'max-connections': 1, 'min-streams': 4, 'padding': True})
-        p.setdefault('brutal-opts', {'enabled': True, 'up': 50, 'down': 100})
-
-    if isinstance(p.get('alpn'), str):
-        p['alpn'] = [p['alpn']]
-    elif not p.get('alpn'):
-        p['alpn'] = ['h3']
-
-    return p
-
 
 def parse_server_port(srv):
     srv = str(srv).strip()
     ports_range = None
-    if ',' in srv or '-' in srv:
-        parts = [p.strip() for p in re.split(r'[,]', srv)]
-        main = parts[0]
-        if len(parts) > 1 and re.search(r'\d+-\d+', parts[-1]):
+    if ',' in srv:
+        parts = [p.strip() for p in srv.split(',')]
+        main_part = parts[0]
+        if len(parts) > 1 and '-' in parts[-1]:
             ports_range = parts[-1]
-        srv = main
+        srv = main_part
+
     if srv.startswith('['):
         m = re.match(r'\[([^\]]+)\]:(\d+)', srv)
         if m:
@@ -161,68 +58,124 @@ def parse_server_port(srv):
             return parts[0], int(parts[1]), ports_range
     return srv, 443, ports_range
 
-
 def process_file(file_path, prefix):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        
         for url in urls:
             try:
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                with urllib.request.urlopen(req, timeout=25) as resp:
                     data = resp.read().decode('utf-8', errors='ignore')
+
                 if url.endswith(('.yaml', '.yml')):
                     process_clash(data, prefix)
                 else:
                     process_json(data, prefix)
+
                 logging.info(f"✓ {prefix}系列 处理完成: {url}")
             except Exception as e:
-                logging.error(f"✗ 处理失败 {url}: {e}")
+                logging.error(f"✗ {prefix}系列 处理失败 {url}: {e}")
     except Exception as e:
         logging.error(f"读取 {file_path} 失败: {e}")
 
 def process_clash(data, prefix):
-    content = yaml.safe_load(data)
-    proxies = content.get('proxies', []) or content.get('proxy', [])
-    for i, raw in enumerate(proxies):
-        if not isinstance(raw, dict):
-            continue
-        p = normalize_proxy(raw)
-        if not p.get('server'):
-            continue
-        fp = make_fingerprint(p)
-        if fp in servers_list:
-            continue
-        p['name'] = f"{prefix}{get_location(p.get('server'))}-{p.get('type','UNK').upper()}-{i+1}"
-        extracted_proxies.append(p)
-        servers_list.append(fp)
+    try:
+        content = yaml.safe_load(data)
+        proxies = content.get('proxies', []) or content.get('proxy', [])
+        for i, p in enumerate(proxies):
+            if not isinstance(p, dict) or not p.get('server'):
+                continue
+            p = dict(p)
+            fp = make_fingerprint(p)
+            if fp in servers_list: continue
+            p['name'] = f"{prefix}{get_location(p.get('server'))}-{p.get('type','unk').upper()}-{i+1}"
+            extracted_proxies.append(p)
+            servers_list.append(fp)
+    except Exception as e:
+        logging.error(f"Clash 处理异常: {e}")
 
 def process_json(data, prefix):
-    content = json.loads(data)
-    items = content.get('outbounds', []) or content.get('proxies', []) or [content]
-    for i, raw in enumerate(items):
-        if not isinstance(raw, dict):
-            continue
-        p = normalize_proxy(raw)
-        if not p.get('server'):
-            continue
-        fp = make_fingerprint(p)
-        if fp in servers_list:
-            continue
-        p['name'] = f"{prefix}{get_location(p.get('server'))}-{p.get('type','UNK').upper()}-{i+1}"
-        extracted_proxies.append(p)
-        servers_list.append(fp)
+    try:
+        content = json.loads(data)
+        
+        if 'server' in content or 'servers' in content:
+            servers = content.get('server') or content.get('servers', [])
+            if isinstance(servers, str): servers = [servers]
+            
+            # 自动判断：只要出现跳跃端口，就判定为 hysteria2
+            has_hop = any(',' in str(s) and '-' in str(s) for s in servers)
+            typ = "hysteria2" if has_hop or "hysteria2" in str(content).lower() else "hysteria"
+            
+            for i, s in enumerate(servers):
+                if not s: continue
+                server, main_port, ports_range = parse_server_port(s)
+                
+                if ports_range:
+                    # 有跳跃端口：port = 主端口, ports = 跳跃范围（推荐方式）
+                    final_port = main_port
+                    final_ports = ports_range
+                    name_suffix = f" ({ports_range})"
+                else:
+                    final_port = main_port
+                    final_ports = None
+                    name_suffix = ""
+
+                p = {
+                    "name": f"{prefix}{get_location(server)}-{typ.upper()}-{i+1}{name_suffix}",
+                    "type": typ,
+                    "server": server,
+                    "port": final_port,
+                    "password": content.get('auth') or content.get('password', content.get('auth_str', '')),
+                    "auth-str": content.get('auth_str') or content.get('auth') or content.get('password', ''),
+                    "sni": content.get('sni') or content.get('peer') or content.get('server_name', ''),
+                    "skip-cert-verify": content.get('insecure', True),
+                    "alpn": content.get('alpn', 'h3')
+                }
+                
+                if final_ports:
+                    p['ports'] = final_ports
+                
+                if typ == "hysteria":
+                    p["up"] = content.get('upmbps') or content.get('up') or 100
+                    p["down"] = content.get('downmbps') or content.get('down') or 100
+                
+                fp = make_fingerprint(p)
+                if fp not in servers_list:
+                    extracted_proxies.append(p)
+                    servers_list.append(fp)
+
+        # outbounds 处理保持不变
+        for ob in content.get('outbounds', []):
+            if not isinstance(ob, dict): continue
+            proto = (ob.get('protocol') or ob.get('type') or '').lower()
+            if proto not in ('vless', 'vmess', 'trojan', 'ss', 'hysteria', 'hysteria2'): continue
+            settings = ob.get('settings', ob)
+            server = settings.get('address') or settings.get('server')
+            if not server: continue
+            port = int(settings.get('port', 443))
+            p = {"server": server, "port": port, "type": proto}
+            if proto == 'vless':
+                p['uuid'] = settings.get('users', [{}])[0].get('id')
+            p['name'] = f"{prefix}{get_location(server)}-{proto.upper()}-{len(extracted_proxies)+1}"
+            fp = make_fingerprint(p)
+            if fp not in servers_list:
+                extracted_proxies.append(p)
+                servers_list.append(fp)
+    except Exception as e:
+        logging.error(f"JSON 处理异常: {e}")
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    logging.info("=== 2026 最终完善版（跳跃端口已加强）开始提取 ===")
-    
+
+    logging.info("=== 开始提取节点 ===")
     process_file("urls/sources.txt", "Y-")
     process_file("urls/sources-j.txt", "Z-")
 
-    logging.info(f"✅ 总共提取到 {len(extracted_proxies)} 个有效节点（跳跃端口节点已恢复）")
+    logging.info(f"总共提取到 {len(extracted_proxies)} 个有效节点")
 
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
-        yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
+        yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False)
 
-    logging.info("🎉 输出完成：outputs/clash_meta.yaml")
+    logging.info("✅ clash_meta.yaml 已成功生成！")
