@@ -313,7 +313,37 @@ proxies:
   alpn: h3
   up: 100
   down: 100
-- name: Z-GEN-VMESS-1-64ms
+- name: Z-GEN-VMESS-1-15ms
+  type: vmess
+  server: zzrt.uhomdex.shop
+  port: 8443
+  uuid: 0b4c4ed4-deed-4bda-ae3d-6c8ccd1d1199
+  alterId: 0
+  cipher: auto
+  tls: true
+  skip-cert-verify: true
+  network: ws
+  ws-opts:
+    path: /
+    headers:
+      Host: zzrt.uhomdex.shop
+  sni: zzrt.uhomdex.shop
+- name: Z-GEN-VMESS-35-16ms
+  type: vmess
+  server: zdqbk.cmvvb.online
+  port: 8443
+  uuid: ef46b74c-b3ef-4633-9818-0af6226c4060
+  alterId: 0
+  cipher: auto
+  tls: true
+  skip-cert-verify: true
+  network: ws
+  ws-opts:
+    path: /
+    headers:
+      Host: zdqbk.cmvvb.online
+  sni: zdqbk.cmvvb.online
+- name: Z-GEN-VMESS-1-67ms
   type: vmess
   server: 82.198.246.97
   port: 180
@@ -325,36 +355,12 @@ proxies:
   network: tcp
   ws-opts: null
   sni: ''
-- name: Z-GEN-VMESS-2-868ms
+- name: Z-GEN-VMESS-2-519ms
   type: vmess
-  server: v12.hdacd.com
-  port: 30812
-  uuid: cbb3f877-d1fb-344c-87a9-d153bffd5484
-  alterId: '0'
-  cipher: auto
-  tls: false
-  skip-cert-verify: true
-  network: tcp
-  ws-opts: null
-  sni: t.me/ripaojiedian
-- name: Z-GEN-VMESS-4-707ms
-  type: vmess
-  server: v30.hdacd.com
-  port: 30830
-  uuid: cbb3f877-d1fb-344c-87a9-d153bffd5484
-  alterId: '0'
-  cipher: auto
-  tls: false
-  skip-cert-verify: true
-  network: tcp
-  ws-opts: null
-  sni: ''
-- name: Z-GEN-VMESS-1-3ms
-  type: vmess
-  server: 188.114.96.3
+  server: cf.090227.xyz
   port: 443
-  uuid: 516d8a7a-3f0b-41d3-bad0-246116381516
-  alterId: 0
+  uuid: 290cc691-3ac6-4387-98a1-25c8eb8ca2ea
+  alterId: '0'
   cipher: auto
   tls: true
   skip-cert-verify: true
@@ -362,28 +368,14 @@ proxies:
   ws-opts:
     path: /
     headers:
-      Host: sy4.620720.xyz
-  sni: sy4.620720.xyz
-- name: Z-GEN-TROJAN-2-85ms
-  type: trojan
-  server: 78.159.131.12
-  port: 28259
-  password: MeaDiUmPlkWbZJ2BON8tz
-  sni: ads.x5.ru
-  skip-cert-verify: true
-- name: Z-GEN-TROJAN-3-207ms
-  type: trojan
-  server: 58.152.25.253
-  port: 443
-  password: BxceQaOe
-  sni: t.me/ripaojiedian
-  skip-cert-verify: true
-- name: Z-GEN-VMESS-4-15ms
+      Host: sgal.dagrate.eu.org
+  sni: sgal.dagrate.eu.org
+- name: Z-GEN-VMESS-3-20ms
   type: vmess
   server: c7.620720.xyz
   port: 8443
   uuid: 516d8a7a-3f0b-41d3-bad0-246116381516
-  alterId: 0
+  alterId: '0'
   cipher: auto
   tls: true
   skip-cert-verify: true
@@ -393,30 +385,29 @@ proxies:
     headers:
       Host: c7.620720.xyz
   sni: c7.620720.xyz
-- name: Z-GEN-VMESS-6-199ms
-  type: vmess
-  server: 8.223.63.189
-  port: 443
-  uuid: 462d9694-62b5-4781-a287-61a422b920e8
-  alterId: 0
-  cipher: auto
-  tls: true
+- name: Z-GEN-TROJAN-4-102ms
+  type: trojan
+  server: 80.173.231.254
+  port: 12420
+  password: wp9IsiY82uQhcmgNC1eoBM
+  sni: www.semanticstaplegun.click
   skip-cert-verify: true
-  network: ws
-  ws-opts:
-    path: /vvip
-    headers:
-      Host: ''
-  sni: mn1ray.jagoanvip.xyz
-- name: Z-GEN-VMESS-7-221ms
+- name: Z-GEN-VMESS-5-62ms
   type: vmess
-  server: v30.hdacd.com
-  port: 30830
-  uuid: cbb3f877-d1fb-344c-87a9-d153bffd5484
+  server: 82.198.246.97
+  port: 180
+  uuid: d13fc2f5-3e05-4795-81eb-44143a09e552
   alterId: '0'
   cipher: auto
   tls: false
   skip-cert-verify: true
   network: tcp
   ws-opts: null
-  sni: www.bing.com
+  sni: 82.198.246.97
+- name: Z-GEN-TROJAN-6-205ms
+  type: trojan
+  server: 58.152.25.253
+  port: 443
+  password: BxceQaOe
+  sni: ''
+  skip-cert-verify: true
