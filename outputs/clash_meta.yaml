@@ -324,272 +324,1025 @@ proxies:
   alpn: h3
   up: 100
   down: 100
-- name: Z-CN-TROJAN-1
-  type: trojan
-  server: 36.156.102.115
-  port: 26876
-  password: BxceQaOe
-  skip-cert-verify: true
-- name: Z-UNK-VMESS-2
-  type: vmess
-  server: v29.heduian.link
-  port: 30829
-  sni: ''
-  uuid: cbb3f877-d1fb-344c-87a9-d153bffd5484
-  cipher: auto
-  network: ws
-  ws-opts:
-    path: /oooo
-    headers:
-      host: ocbc.com
-  alterId: 2
-- name: Z-MD-Chisinau-SS-3
+- name: Z-ES-Madrid-SS-1
+  server: 5.188.181.201
   type: ss
-  server: 185.153.197.5
-  port: 989
+  port: 9005
+  password: ZET59LF6DvCC8KVt
   cipher: aes-256-cfb
+- name: Z-NL-Rozendaal-SS-2
+  server: 109.201.152.181
+  type: ss
+  port: 443
+  udp: true
+  password: shadowsocks
+  cipher: aes-128-cfb
+- name: Z-HK-SS-3
+  server: 154.223.20.79
+  type: ss
+  port: 989
+  udp: true
   password: f8f7aCzcPKbsF8p3
-- alterId: 2
-  cipher: auto
-  name: Z-UNK-VMESS-1
-  port: 30807
-  server: v10.hdacd.com
-  skip-cert-verify: false
-  tls: false
-  type: vmess
-  uuid: cbb3f877-d1fb-344c-87a9-d153bffd5484
-- cipher: aes-256-cfb
-  name: Z-HK-SS-2
-  password: qwerREWQ@@
-  port: 41632
-  server: 112.213.102.188
+  cipher: aes-256-cfb
+- name: Z-BE-Oostkamp-SS-4
+  server: 192.71.249.78
   type: ss
-- cipher: aes-256-cfb
-  name: Z-TR-Izmir-SS-3
-  password: U6qnYRhfyDmn8sgn
-  port: 9041
-  server: 45.89.52.66
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-SI-Ljubljana-SS-5
+  server: 192.71.244.150
   type: ss
+  port: 989
   udp: true
-- cipher: aes-128-gcm
-  name: Z-US-Los Angeles-SS-4
-  password: Yc2CtrIz8L
-  port: 16899
-  server: 75.102.51.45
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-HR-Zagreb-SS-6
+  server: 46.183.184.60
   type: ss
+  port: 989
   udp: true
-- cipher: chacha20-ietf-poly1305
-  name: Z-UNK-SS-5
-  password: ezesBXesf3RKBCp1vqKuIx
-  port: 8080
-  server: beeconf.xyz
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-DK-Copenhagen-SS-7
+  server: 192.36.27.94
   type: ss
-  udp: true
-- cipher: aes-256-gcm
-  name: Z-DE-SS-6
-  password: faBAoD54k87UJG7
-  port: 2376
-  server: 217.182.198.219
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-ES-Madrid-SS-8
+  server: 5.188.181.201
   type: ss
-  udp: true
-- name: Z-AU-Sydney-TROJAN-7
-  password: 4b1b3f03-6493-44a9-afcf-0ccf7c754154
-  port: 443
-  server: 194.195.123.173
-  skip-cert-verify: true
+  port: 9029
+  password: dU3DSNS8wYPXzEKw
+  cipher: aes-256-cfb
+- name: Z-MT-Valletta-SS-9
+  server: 171.22.254.17
+  type: ss
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-UNK-TROJAN-10
+  server: 104.21.112.1
   type: trojan
-  udp: true
-- cipher: chacha20-ietf-poly1305
-  name: Z-UNK-SS-8
-  password: be443689-bc64-49ff-85a5-8eecaa2235d3
-  port: 41049
-  server: hk2.fgmcx.top
-  tfo: false
-  type: ss
-- cipher: chacha20-ietf-poly1305
-  name: Z-UNK-SS-9
-  password: 3016be06-2f91-4b8f-9e6a-bd55f2c55610
-  port: 36028
-  server: 8t6w03.a3b5wy.xyz
-  type: ss
-  udp: true
-- cipher: chacha20-ietf-poly1305
-  name: Z-UNK-SS-10
-  password: 861de7db-5ada-4b36-903c-0ad6ba25d75a
-  port: 37999
-  server: j90r55t0im2kfwz6.3a-sg01.my777999.top
-  type: ss
-  udp: true
-- alterId: 0
-  cipher: chacha20-ietf-poly1305
-  name: Z-NL-Meppel-SS-11
-  password: 36ZCHeabUSfKjfQEvJ4HDV
-  port: 54170
-  server: 185.242.86.156
-  skip-cert-verify: true
-  tls: true
-  type: ss
-- name: Z-DE-Frankfurt am Main-TROJAN-12
-  password: a6f2dfa2-dfde-46db-9b0d-29f8c9032ed5
   port: 443
-  server: 164.90.167.242
+  password: psycho
+  alpn:
+  - http%2F1.1
+  sni: pSYcho.sUeX12.IR
   skip-cert-verify: true
+  udp: true
+- name: Z-UNK-TROJAN-11
+  server: 104.21.44.185
   type: trojan
+  port: 2053
+  password: dreDeMpIQpnv
+  alpn:
+  - h3%2Ch2%2Chttp%2F1.1
+  sni: aryanews.onetwothree123.ir
+  skip-cert-verify: true
+  udp: true
+- name: Z-UNK-TROJAN-12
+  server: 104.21.80.1
+  type: trojan
+  port: 443
+  password: psycho
+  alpn:
+  - http%2F1.1
+  sni: PSYchO.SueX12.Ir
+  skip-cert-verify: true
   udp: true
 - name: Z-UNK-TROJAN-13
-  password: 5425aa49-ec9d-4df3-aaad-878270e78635
-  port: 9489
-  server: b13.ntbq.dynu.net
-  skip-cert-verify: true
-  sni: b13.ntbq.dynu.net
+  server: a03.taipeicitygovernment.cn.ua
   type: trojan
-  udp: true
-- cipher: aes-256-cfb
-  name: Z-UNK-SS-14
-  password: qwerREWQ@@
-  port: 58449
-  server: p234.panda004.net
-  type: ss
-  udp: true
-- name: Z-GB-London-TROJAN-15
-  password: telegram-id-privatevpns
-  port: 22222
-  server: 3.9.27.170
+  country: 🇨🇳 CN
+  port: 3462
+  password: 6e1b9a65-884f-3aa9-9469-bf6ec0f08610
   skip-cert-verify: true
-  sni: trojan.burgerip.co.uk
-  type: trojan
   udp: true
-- name: Z-UNK-TROJAN-16
-  password: 97fbc8ee-e529-4aa4-80fe-90062b724667
+- name: Z-DE-Frankfurt am Main-TROJAN-14
+  server: 139.162.158.172
+  type: trojan
+  country: 🇩🇪DE
   port: 443
-  server: au-full.privateip.net
+  password: 665c944d-047d-4659-80d5-3eaac70241a9
+  sni: de2-full.privateip.net
   skip-cert-verify: true
-  type: trojan
   udp: true
-- cipher: aes-256-gcm
-  name: Z-US-Dallas-SS-17
-  password: KixLvKzwjekG00rm
-  port: 5500
-  server: 38.68.135.18
+- name: Z-BE-Brussels-SS-15
+  server: 82.180.146.173
   type: ss
+  country: 🇩🇰 DK
+  port: 35652
+  password: 93498539-7838-4836-b9b3-8311ffc79bcf
+  cipher: aes-128-gcm
+- name: Z-ES-Madrid-SS-16
+  server: 37.143.130.203
+  type: ss
+  country: 🇪🇸 ES
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-UNK-TROJAN-17
+  server: de-full.privateip.net
+  type: trojan
+  country: 🇫🇷FR
+  port: 443
+  password: d86c421f-dbfe-4507-a864-f8f9e29d80e4
+  skip-cert-verify: true
   udp: true
-- cipher: chacha20-ietf-poly1305
-  name: Z-GB-Croydon-SS-18
-  password: oZIoA69Q8yhcQV8ka3Pa3A
+- name: Z-UNK-TROJAN-18
+  server: fr-full.privateip.net
+  type: trojan
+  country: 🇫🇷FR
+  port: 443
+  password: 6c64e6f9-a76c-49eb-96d2-bf8b1afee4a3
+  skip-cert-verify: true
+  udp: true
+- name: Z-UNK-TROJAN-19
+  server: uk-full.privateip.net
+  type: trojan
+  country: 🇫🇷FR
+  port: 443
+  password: d150c8c3-a667-4d3e-843c-739f8558c7d2
+  skip-cert-verify: true
+  udp: true
+- name: Z-GB-SS-20
+  server: 185.5.38.111
+  type: ss
+  country: 🇬🇧 GB
+  port: 55988
+  password: iZDJs2CDckHKqJ5W7cpvCq2veqsqWn95iqs6Kr6F3YNnyMsk2uPdRrChQfShvH1v56Br1qWEW44qJna5QcMcZF7RCJmdvwuq
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-21
+  server: 82.38.31.194
+  type: ss
+  country: 🇬🇧 GB
   port: 8080
-  server: 82.38.31.124
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-UNK-SS-22
+  server: mx2.drawnrisha.one
   type: ss
-- cipher: rc4-md5
-  name: Z-CN-SS-19
-  password: dbEcUJ
-  port: 24603
-  server: 211.99.97.12
+  country: 🇬🇧 GB
+  port: 55988
+  password: FjgGNNHQiELzxXmaHRxxtQbxDDvGXFxYdTbYe91JKZsjvKLHoY9rn9ruYE45377WjtU3m4kmXQZDXiHBJsgVfhmpawEoGvq9
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-23
+  server: 82.38.31.199
   type: ss
-  udp: true
-- name: Z-US-TROJAN-20
-  network: ws
-  password: 7f2782e1-1f1a-4c5b-b4ae-cead54b8c381
+  country: 🇬🇧 GB
+  port: 8080
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-SS-24
+  server: 185.5.38.111
+  type: ss
+  country: 🇬🇧 GB
+  port: 55988
+  password: 2EmWRS1TkS3TkxKApnrihb3aHjDSXRvT1T1K9U2Bruxrnp5A8zmpTxwwTNje6BkVqmn9BgRF6pq8qoRHCfZdcah7BLbjrpT1
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-SS-25
+  server: 185.5.38.111
+  type: ss
+  country: 🇬🇧 GB
+  port: 55988
+  password: 4ju873evpjeaAi8Zq12YoRHWp63o5exdnZ71aUg1YEChiPTc2HkasYhUBxRz7UGi4K6cLrsGaU6b44H4Qa6f4cJn3zBp2cnX
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-SS-26
+  server: 185.5.38.111
+  type: ss
+  country: 🇬🇧 GB
+  port: 55988
+  password: BpFieMT6SobpqRiKFefvYu7eXk99XfCeWfjpntzSh81FfMx9R7rJW6LTmzH78StTEhCd7w32ZMxbGJZS98gpn1ozr9jAbMoa
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Manchester-SS-27
+  server: 141.98.101.178
+  type: ss
+  country: 🇬🇧 GB
   port: 443
-  server: 172.67.191.234
-  skip-cert-verify: true
-  sni: nl1.tRojANVpN.xYZ
-  type: trojan
-  udp: true
-  ws-opts:
-    headers:
-      Host: nl1.tRojANVpN.xYZ
-    path: '%25252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252525252F'
-- cipher: chacha20-ietf-poly1305
-  name: Z-UNK-SS-21
-  password: 3016be06-2f91-4b8f-9e6a-bd55f2c55610
-  port: 36031
-  server: 3u1s02.a3b5wy.xyz
+  password: shadowsocks
+  cipher: aes-128-gcm
+- name: Z-GB-Croydon-SS-28
+  server: 82.38.31.214
   type: ss
-  udp: true
-- cipher: aes-256-gcm
-  name: Z-CA-Richmond Hill-SS-22
-  password: faBAoD54k87UJG7
-  port: 2376
-  server: 38.107.226.238
+  country: 🇬🇧 GB
+  port: 8080
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-UNK-SS-29
+  server: mx2.drawnrisha.one
   type: ss
-  udp: true
-- name: Z-JP-Tokyo-TROJAN-23
-  password: NtttpUsd92KX
-  port: 17391
-  server: 57.180.26.205
-  skip-cert-verify: true
-  sni: appsvs.shop
-  type: trojan
-  udp: true
-- cipher: rc4-md5
-  name: Z-UNK-SS-24
-  password: dbEcUJ
-  port: 24603
-  server: tw11.ktp.wtf
+  country: 🇬🇧 GB
+  port: 55988
+  password: bZ87amPpdG7KuWM62bKtm1KHoowuVjnV8CKtq653ymHcg2dPYcPJfnaQ61stuAjr2ZiLDaqH56XpkxEYuwDzzRrMWieebWGt
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-30
+  server: 82.38.31.35
   type: ss
-  udp: true
-- cipher: aes-256-gcm
-  name: Z-UNK-SS-25
-  password: 20ff026e-e9c7-4147-bf3c-d6e21063f92c
-  port: 16263
-  server: ztw2.capoonetwork.com
+  country: 🇬🇧 GB
+  port: 8080
+  password: oZIoA69Q8yhcQV8ka3Pa3A
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-31
+  server: 82.38.31.82
   type: ss
-  udp: true
-- cipher: aes-256-cfb
-  name: Z-RO-Bucharest-SS-26
-  password: f8f7aCzcPKbsF8p3
-  port: 989
-  server: 194.14.217.115
+  country: 🇬🇧 GB
+  port: 8080
+  password: oZIoA69Q8yhcQV8ka3Pa3A
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-32
+  server: 82.38.31.208
   type: ss
-  udp: true
-- alterId: 4
-  cipher: auto
-  client-fingerprint: chrome
-  name: Z-SG-VMESS-27
-  network: ws
-  port: 443
-  server: 103.253.26.20
-  skip-cert-verify: true
-  tls: true
+  country: 🇬🇧 GB
+  port: 8080
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-33
+  server: 82.38.31.184
+  type: ss
+  country: 🇬🇧 GB
+  port: 8080
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-34
+  server: 82.38.31.189
+  type: ss
+  country: 🇬🇧 GB
+  port: 8080
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-35
+  server: 82.38.31.179
+  type: ss
+  country: 🇬🇧 GB
+  port: 8080
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-36
+  server: 82.38.31.99
+  type: ss
+  country: 🇬🇧 GB
+  port: 8080
+  password: oZIoA69Q8yhcQV8ka3Pa3A
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-SS-37
+  server: 195.66.25.220
+  type: ss
+  country: 🇬🇧 GB
+  port: 8388
+  password: yhrHMDgZ2egKftvrecvkpUPqpUTyac7q
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-Croydon-SS-38
+  server: 82.38.31.218
+  type: ss
+  country: 🇬🇧 GB
+  port: 8080
+  password: k1dBOmOB4oqi7Ump37a1bQ
+  cipher: chacha20-ietf-poly1305
+- name: Z-GB-VMESS-39
+  server: 82.198.246.97
   type: vmess
-  uuid: aba50dd4-5484-3b05-b14a-4661caf862d5
-  ws-opts:
-    headers:
-      host: zecjk.com
-    path: /ws
-- cipher: aes-128-gcm
-  name: Z-US-Los Angeles-SS-28
-  password: Yc2CtrIz8L
-  port: 16899
-  server: 216.246.25.159
-  type: ss
-  udp: true
-- name: Z-UNK-TROJAN-29
-  password: 507ca9a0-2d8e-4b65-8763-82dfbdbd599f
+  country: 🇬🇧 GB
+  port: 180
+  uuid: d13fc2f5-3e05-4795-81eb-44143a09e552
+  alterId: 0
+  cipher: auto
+  network: tcp
+  ws-path: /
+  http-opts: {}
+  h2-opts: {}
+  skip-cert-verify: true
+- name: Z-GB-London-TROJAN-40
+  server: 51.38.65.155
+  type: trojan
+  country: 🇬🇧 GB
   port: 443
-  server: hkjs.lydurlclub.top
+  password: 255a0a50-3f10-11f0-b0d6-1239d0255272
   skip-cert-verify: true
+  udp: true
+- name: Z-GB-London-TROJAN-41
+  server: 51.38.65.155
   type: trojan
-  udp: true
-- cipher: aes-128-gcm
-  name: Z-UNK-SS-30
-  password: bd987f39-3d08-4e95-b08b-a99999d0beba
-  port: 22224
-  server: 04.forlive.live
-  type: ss
-  udp: true
-- name: Z-UNK-TROJAN-31
-  password: 5425aa49-ec9d-4df3-aaad-878270e78635
-  port: 18912
-  server: ty12t.twty.dynu.net
+  country: 🇬🇧 GB
+  port: 443
+  password: dd6dcb10-4683-11f0-ae79-1239d0255272
   skip-cert-verify: true
-  sni: ty12t.twty.dynu.net
+  udp: true
+- name: Z-UNK-TROJAN-42
+  server: uk2-full.privateip.net
   type: trojan
+  country: 🇬🇧GB
+  port: 443
+  password: 30761083-5dcd-49d6-85b5-33756ef1f7ed
+  skip-cert-verify: true
   udp: true
-- cipher: chacha20-ietf-poly1305
-  name: Z-UNK-SS-32
-  password: 9bc1eddf-1674-40f1-ad64-00a6fc5c2054
-  port: 27893
-  server: gg.efnwgood.top
+- name: Z-HK-SS-43
+  server: 154.223.16.212
   type: ss
+  country: 🇭🇰 HK
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-SG-SS-44
+  server: 103.36.91.23
+  type: ss
+  country: 🇭🇰 HK
+  port: 8388
+  password: asd123456
+  cipher: chacha20-ietf
+- name: Z-HU-Solt-SS-45
+  server: 109.61.39.28
+  type: ss
+  country: 🇭🇺 HU
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-UNK-VMESS-46
+  server: n1753598448.74qxv.top
+  type: vmess
+  country: 🇯🇵 JP
+  port: 443
+  uuid: 3cd6f849-078e-4da9-8080-a2791b51b766
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1753598448.74qxv.top
+  ws-headers:
+    HOST: n1753598448.74qxv.top
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-JP-Tokyo-VMESS-47
+  server: 47.74.52.195
+  type: vmess
+  country: 🇯🇵 JP
+  port: 443
+  uuid: 3cd6f849-078e-4da9-8080-a2791b51b766
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1753598448.74qxv.top
+  ws-headers:
+    HOST: n1753598448.74qxv.top
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-UNK-SS-48
+  server: p141.panda001.net
+  type: ss
+  country: 🇰🇷 KR
+  port: 4652
+  password: qwerREWQ@@
+  cipher: aes-256-cfb
+- name: Z-KR-Yeongdeungpo-gu-SS-49
+  server: 218.237.185.230
+  type: ss
+  country: 🇰🇷 KR
+  port: 4652
+  password: qwerREWQ@@
+  cipher: aes-256-cfb
+- name: Z-AE-Dubai-SS-50
+  server: 147.78.0.182
+  type: ss
+  country: 🇱🇹 LT
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-LV-Riga-SS-51
+  server: 46.183.217.204
+  type: ss
+  country: 🇱🇻 LV
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-LV-Riga-SS-52
+  server: 185.176.221.72
+  type: ss
+  country: 🇱🇻 LV
+  port: 24637
+  password: MholStyHL7DhrewKbpQa20
+  cipher: chacha20-ietf-poly1305
+- name: Z-MA-Abadou-SS-53
+  server: 188.214.157.58
+  type: ss
+  country: 🇲🇩 MD
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-MK-Skopje-SS-54
+  server: 46.183.185.37
+  type: ss
+  country: 🇲🇰MK
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-NL-SS-55
+  server: 193.29.139.141
+  type: ss
+  country: 🇳🇱 NL
+  port: 8080
+  password: oZIoA69Q8yhcQV8ka3Pa3A
+  cipher: chacha20-ietf-poly1305
+- name: Z-NL-SS-56
+  server: 193.29.139.179
+  type: ss
+  country: 🇳🇱 NL
+  port: 8080
+  password: cvII85TrW6n0OGyfpHVS1u
+  cipher: chacha20-ietf-poly1305
+- name: Z-NL-SS-57
+  server: 193.29.139.227
+  type: ss
+  country: 🇳🇱 NL
+  port: 8080
+  password: QCXDxuDlTTMD7jtgHUjIoj
+  cipher: chacha20-ietf-poly1305
+- name: Z-NL-SS-58
+  server: 193.29.139.189
+  type: ss
+  country: 🇳🇱 NL
+  port: 8080
+  password: cvII85TrW6n0OGyfpHVS1u
+  cipher: chacha20-ietf-poly1305
+- name: Z-NL-SS-59
+  server: 193.29.139.189
+  type: ss
+  country: 🇳🇱 NL
+  port: 8080
+  password: QCXDxuDlTTMD7jtgHUjIoj
+  cipher: chacha20-ietf-poly1305
+- name: Z-NL-SS-60
+  server: 193.29.139.206
+  type: ss
+  country: 🇳🇱 NL
+  port: 8080
+  password: 4a2rfixophdjffa8KVA4Aa
+  cipher: chacha20-ietf-poly1305
+- name: Z-NL-SS-61
+  server: 193.29.139.251
+  type: ss
+  country: 🇳🇱NL
+  port: 8080
+  password: oZIoA69Q8yhcQV8ka3Pa3A
+  cipher: chacha20-ietf-poly1305
+- name: Z-NL-SS-62
+  server: 193.29.139.202
+  type: ss
+  country: 🇳🇱NL
+  port: 8080
+  password: oZIoA69Q8yhcQV8ka3Pa3A
+  cipher: chacha20-ietf-poly1305
+- name: Z-RU-Moscow-SS-63
+  server: 5.181.2.76
+  type: ss
+  country: 🇷🇺 RU
+  port: 36608
+  password: JOZ5Mb3nJCmmoKhd8Cc9aC
+  cipher: chacha20-ietf-poly1305
+- name: Z-RU-TROJAN-64
+  server: 5.182.84.244
+  type: trojan
+  country: 🇷🇺 RU
+  port: 443
+  password: Aimer
+  sni: epme.ambercc.filegear-sg.me
+  skip-cert-verify: true
   udp: true
+- name: Z-RU-TROJAN-65
+  server: 194.246.114.54
+  type: trojan
+  country: 🇷🇺RU
+  port: 443
+  password: e299faed-cb72-4c62-bb2e-f0a218aed72a
+  skip-cert-verify: true
+  udp: true
+- name: Z-UNK-SSR-66
+  server: ssca.irundns.net
+  type: ssr
+  country: 🇸🇪 SE
+  port: 443
+  password: $$Turb0VPN$$
+  cipher: aes-128-cfb
+  protocol: auth_aes128_md5
+  obfs: http_post
+- name: Z-UNK-VMESS-67
+  server: n1761214911.74qxv.top
+  type: vmess
+  country: 🇸🇬 SG
+  port: 443
+  uuid: 372c1939-299d-4946-9633-5ffa971f8b67
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1761214911.74qxv.top
+  ws-headers:
+    HOST: n1761214911.74qxv.top
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-UNK-VMESS-68
+  server: n1761214910.74qxv.top
+  type: vmess
+  country: 🇸🇬 SG
+  port: 443
+  uuid: 011c4670-cdde-44fb-b9be-8a1e27af26c9
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1761214910.74qxv.top
+  ws-headers:
+    HOST: n1761214910.74qxv.top
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-UNK-VMESS-69
+  server: n1761214905.wpg27.xyz
+  type: vmess
+  country: 🇸🇬 SG
+  port: 443
+  uuid: b1d3007c-441a-42d5-84b5-20301c46fa2c
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-HK-Hong Kong-VMESS-70
+  server: 8.218.52.5
+  type: vmess
+  country: 🇸🇬 SG
+  port: 443
+  uuid: 1f2daf43-ff90-4df9-9276-dfb8486d72bc
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1761214915.mv7wh.tech
+  ws-headers:
+    HOST: n1761214915.mv7wh.tech
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-UNK-VMESS-71
+  server: n1752248946.4u9ma.icu
+  type: vmess
+  country: 🇸🇬 SG
+  port: 443
+  uuid: ef167986-d154-4409-88b1-757efb6ae823
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1752248946.4u9ma.icu
+  ws-headers:
+    HOST: n1752248946.4u9ma.icu
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-UNK-TROJAN-72
+  server: a03.taipeicitygovernment.cn.ua
+  type: trojan
+  country: 🇹🇼 TW
+  port: 3462
+  password: 736cd94d-7b94-3e44-8106-3419f64eaf09
+  skip-cert-verify: true
+  udp: true
+- name: Z-UNK-SS-73
+  server: switcher-nick-croquet.freesocks.work
+  type: ss
+  country: 🇺🇦 UA
+  port: 443
+  password: 9tqhMdIrTkgQ46PvhyAtMH
+  cipher: chacha20-ietf-poly1305
+- name: Z-UNK-TROJAN-74
+  server: it-full.privateip.net
+  type: trojan
+  country: 🇺🇦UA
+  port: 443
+  password: 8d16a256-42d7-4431-8039-da1eb06cafbc
+  skip-cert-verify: true
+  udp: true
+- name: Z-BR-São Paulo-SS-75
+  server: 38.54.57.90
+  type: ss
+  country: 🇺🇸 US
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-US-Dallas-SS-76
+  server: 156.146.38.167
+  type: ss
+  country: 🇺🇸 US
+  port: 443
+  password: shadowsocks
+  cipher: aes-128-gcm
+- name: Z-PY-Asunción-SS-77
+  server: 38.165.233.93
+  type: ss
+  country: 🇺🇸 US
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-US-Dallas-SS-78
+  server: 156.146.38.170
+  type: ss
+  country: 🇺🇸 US
+  port: 443
+  password: shadowsocks
+  cipher: aes-128-gcm
+- name: Z-UNK-SS-79
+  server: promo18v.bystrivpn.ru
+  type: ss
+  country: 🇺🇸 US
+  port: 443
+  password: dAHM1pm8ag7KdlrUylQi6t
+  cipher: chacha20-ietf-poly1305
+- name: Z-UNK-SS-80
+  server: tinkered-pennies-puppies.freesocks.work
+  type: ss
+  country: 🇺🇸 US
+  port: 443
+  password: hbGrpfvNrJsUmKmPbR3iY2
+  cipher: chacha20-ietf-poly1305
+- name: Z-BR-São Paulo-SS-81
+  server: 154.90.63.177
+  type: ss
+  country: 🇺🇸 US
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-US-New York-SS-82
+  server: 38.89.142.56
+  type: ss
+  country: 🇺🇸 US
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-US-New York-SS-83
+  server: 193.135.174.135
+  type: ss
+  country: 🇺🇸 US
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-EG-Cairo-SS-84
+  server: 38.54.59.180
+  type: ss
+  country: 🇺🇸 US
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-BR-São Paulo-SS-85
+  server: 154.90.62.168
+  type: ss
+  country: 🇺🇸 US
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-EC-Quito-SS-86
+  server: 38.165.231.25
+  type: ss
+  country: 🇺🇸 US
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-MX-Querétaro City-VMESS-87
+  server: 216.238.87.47
+  type: vmess
+  country: 🇺🇸 US
+  port: 27502
+  uuid: b8155ce4-7e08-4c40-800f-8671312b7124
+  alterId: 0
+  cipher: auto
+  network: none
+  ws-path: /
+  http-opts: {}
+  h2-opts: {}
+  skip-cert-verify: true
+- name: Z-HK-Hong Kong-VMESS-88
+  server: 47.243.95.187
+  type: vmess
+  country: 🇺🇸 US
+  port: 443
+  uuid: c28a6258-7baa-40fc-8a51-87f59c847cd7
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1761214906.wpg27.xyz
+  ws-headers:
+    HOST: n1761214906.wpg27.xyz
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-UNK-VMESS-89
+  server: n1753598452.wpg27.xyz
+  type: vmess
+  country: 🇺🇸 US
+  port: 443
+  uuid: 4f23eb7c-ef2f-43b0-90dd-f2b8a75954a5
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1753598452.wpg27.xyz
+  ws-headers:
+    HOST: n1753598452.wpg27.xyz
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-UNK-VMESS-90
+  server: n1753101272.lie5d.cyou
+  type: vmess
+  country: 🇺🇸 US
+  port: 443
+  uuid: 568a3e7a-c13e-4205-af30-e75ec3e5c778
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /
+  servername: n1753101272.lie5d.cyou
+  ws-headers:
+    HOST: n1753101272.lie5d.cyou
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
+- name: Z-US-New York-TROJAN-91
+  server: 154.17.24.29
+  type: trojan
+  country: 🇺🇸 US
+  port: 443
+  password: x3wOepOcT04FnR8YYF35pzSACDgRBa3CAe9qNalDCy6a2uE8Z7xlX3SSyZKDIj
+  skip-cert-verify: true
+  udp: true
+- name: Z-UNK-TROJAN-92
+  server: usla.mjt000.com
+  type: trojan
+  country: 🇺🇸 US
+  port: 443
+  password: e4af2638-bb12-4e4a-84f1-a032e23ca63f
+  skip-cert-verify: true
+  udp: true
+- name: Z-UNK-TROJAN-93
+  server: hinet.mjt000.com
+  type: trojan
+  country: 🇺🇸 US
+  port: 443
+  password: 92435aa8-f3b6-466a-ad58-c55cbb6d2acf
+  skip-cert-verify: true
+  udp: true
+- name: Z-US-Los Angeles-TROJAN-94
+  server: 5.253.41.160
+  type: trojan
+  country: 🇺🇸US
+  port: 443
+  password: d9576e81-fc34-46f2-b624-0c1e99cde4be
+  skip-cert-verify: true
+  udp: true
+- name: Z-ZA-Johannesburg-SS-95
+  server: 102.37.156.224
+  type: ss
+  country: 🇿🇦 ZA
+  port: 443
+  password: aduB9HGxQHjA2SBMRjkHX6
+  cipher: chacha20-ietf-poly1305
+- name: Z-ZA-Johannesburg-SS-96
+  server: 102.133.165.160
+  type: ss
+  country: 🇿🇦 ZA
+  port: 16233
+  password: Xsy8Ox4yOV3xLlpxtjzs3X
+  cipher: chacha20-ietf-poly1305
+- name: Z-ZA-Pretoria-SS-97
+  server: 156.38.168.58
+  type: ss
+  country: 🇿🇦 ZA
+  port: 990
+  password: ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=
+  cipher: chacha20-ietf-poly1305
+- name: Z-VN-Hai Duong-SS-98
+  server: 103.186.154.30
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-99
+  server: 103.186.155.21
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-100
+  server: 103.186.154.24
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-PT-Lisbon-SS-101
+  server: 185.231.233.112
+  type: ss
+  country: 🏁 ZZ
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-102
+  server: 103.186.154.33
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-103
+  server: 103.186.154.37
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-104
+  server: 103.186.155.20
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-105
+  server: 103.186.154.35
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-106
+  server: 103.186.154.19
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-107
+  server: 103.186.154.28
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-108
+  server: 103.186.154.31
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-109
+  server: 103.186.154.22
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-110
+  server: 103.186.154.21
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-111
+  server: 103.186.154.36
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-112
+  server: 103.186.154.38
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-113
+  server: 103.186.154.29
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-GB-SS-114
+  server: 213.109.147.242
+  type: ss
+  country: 🏁 ZZ
+  port: 62685
+  password: VpKABcOpNNA0l5G2AVOmw8
+  cipher: chacha20-ietf-poly1305
+- name: Z-VN-Hai Duong-SS-115
+  server: 103.186.155.19
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-116
+  server: 103.186.154.27
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-117
+  server: 103.186.154.32
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-118
+  server: 103.186.155.24
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hanoi-SS-119
+  server: 103.163.218.2
+  type: ss
+  country: 🏁 ZZ
+  port: 989
+  password: f8f7aCzcPKbsF8p3
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-120
+  server: 103.186.154.26
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-121
+  server: 103.186.155.133
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-122
+  server: 103.186.154.18
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-123
+  server: 103.186.155.25
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-124
+  server: 103.186.154.25
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-VN-Hai Duong-SS-125
+  server: 103.186.155.23
+  type: ss
+  country: 🏁 ZZ
+  port: 38388
+  password: Xn8jKdmDM00IeO%#$#fJAMtsEAEUOpH/YWYtYqDFnT0SV
+  cipher: aes-256-cfb
+- name: Z-CA-Montreal-VMESS-126
+  server: 134.195.198.147
+  type: vmess
+  country: 🏁 ZZ
+  port: 443
+  uuid: 03fcc618-b93d-6796-6aed-8a38c975d581
+  alterId: 0
+  cipher: auto
+  network: ws
+  ws-path: /linkvws
+  http-opts: {}
+  h2-opts: {}
+  tls: true
+  skip-cert-verify: true
