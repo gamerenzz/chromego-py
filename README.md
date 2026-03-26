@@ -6,7 +6,6 @@ A python script to extract ChromeGo Proxies
 
 一个用来提取ChromeGo代理节点的Python脚本
 
-**中文** | [English](README_EN.md)
 
 </div>
 
@@ -15,6 +14,7 @@ A python script to extract ChromeGo Proxies
 [] 添加更多节点来源
 
 > 鸣谢
+> - 感谢[linzjian666](https://github.com/linzjian666/chromego_extractor)项目是原始项目，Ai大幅改写
 > - 感谢[ChromeGo](https://github.com/bannedbook/fanqiang)项目
 > - 感谢[Alvin9999](https://github.com/Alvin9999/)大佬
 > - 感谢[chromegopacs](https://github.com/markbang/chromegopacs)提供的区域代码设置思路
