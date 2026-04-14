@@ -224,7 +224,7 @@ proxies:
     short-id: ''
 - name: TW-New Taipei-VLESS-19
   type: vless
-  server: 118.166.4.66
+  server: 118.166.0.164
   port: 44965
   uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
   flow: xtls-rprx-vision
