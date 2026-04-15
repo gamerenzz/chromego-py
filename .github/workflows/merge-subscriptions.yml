@@ -27,19 +27,23 @@ jobs:
       - name: 执行合并脚本
         run: python merge_sources.py
 
-      - name: 配置 Git 并提交更新
+      - name: 配置 Git 并智能提交
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 关键修复：先拉取最新代码
-          git pull --rebase origin main
+          # 先暂存脚本生成的更新
+          git add outputs/merged_subscriptions.txt
           
-          if git diff --quiet outputs/merged_subscriptions.txt; then
+          # 检查是否有实际变化
+          if git diff --staged --quiet; then
             echo "📭 本次订阅内容无变化，跳过提交"
           else
-            echo "📤 检测到更新，正在提交..."
-            git add outputs/merged_subscriptions.txt
+            echo "📤 检测到订阅更新，正在提交..."
+            
+            # 拉取最新代码并自动处理冲突（推荐方式）
+            git pull --rebase --autostash origin main
+            
             git commit -m "🔄 自动更新合并订阅文件 $(date '+%Y-%m-%d %H:%M:%S')"
             git push
           fi
