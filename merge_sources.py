@@ -1,7 +1,7 @@
 import urllib.request
 import os
+import re
 from urllib.error import URLError, HTTPError
-
 
 def fetch_url(url: str) -> str:
     """读取订阅地址内容"""
@@ -23,20 +23,60 @@ def fetch_url(url: str) -> str:
         return f"# 【错误】未知异常 {url}：{str(e)}\n"
 
 
+def extract_kernel_name(group_title: str) -> str:
+    """
+    从分组标题中提取内核名称
+    支持常见写法：Clash、V2Ray、Xray、Sing-box、Hysteria2、TUIC、Trojan、Shadowsocks 等
+    """
+    title = group_title.lower().strip()
+
+    # 常见内核名称映射（优先匹配更长的关键词）
+    kernel_map = {
+        'clash': 'clash',
+        'clash.meta': 'clash',
+        'sing-box': 'sing-box',
+        'singbox': 'sing-box',
+        'v2ray': 'v2ray',
+        'xray': 'v2ray',      # xray 通常也用 v2ray 内核
+        'hysteria2': 'hysteria2',
+        'hy2': 'hysteria2',
+        'tuic': 'tuic',
+        'trojan': 'trojan',
+        'shadowsocks': 'shadowsocks',
+        'ss ': 'shadowsocks',
+        'ssr': 'shadowsocks',
+    }
+
+    for key, kernel in kernel_map.items():
+        if key in title:
+            return kernel
+
+    # 如果没匹配到，使用正则尝试提取常见单词
+    match = re.search(r'(clash|sing-?box|v2ray|xray|hysteria2?|hy2|tuic|trojan|shadowsocks|ssr)', title)
+    if match:
+        name = match.group(1)
+        return 'sing-box' if name.startswith('sing') else \
+               'hysteria2' if name.startswith('hy') or name == 'hysteria2' else \
+               'v2ray' if name in ('v2ray', 'xray') else \
+               'shadowsocks' if name in ('shadowsocks', 'ssr') else name
+
+    # 默认名称
+    return "nodes"
+
+
 def sanitize_filename(name: str) -> str:
     """清理文件名非法字符"""
     invalid = '<>:"/\\|?*'
     for char in invalid:
         name = name.replace(char, '_')
-    # 去除首尾空格和多余下划线
     name = name.strip().strip('_')
-    return name[:100]  # 限制长度
+    return name[:100]
 
 
 def main():
     input_file = "urls/sources.txt"
     output_dir = "outputs"
-
+    
     if not os.path.exists(input_file):
         print(f"❌ 未找到 {input_file} 文件！")
         return
@@ -51,7 +91,6 @@ def main():
 
     current_group = None
     current_urls = []
-
     for line in lines:
         stripped = line.strip()
         if stripped == "":
@@ -60,33 +99,38 @@ def main():
                 current_urls = []
             current_group = None
             continue
-
         if current_group is None:
-            current_group = line.rstrip()   # 保留原始标题
+            current_group = line.rstrip()   # 保留原始标题用于提取内核名
             current_urls = []
         else:
-            if stripped:
+            if stripped and not stripped.startswith('#'):
                 current_urls.append(stripped)
 
     if current_group and current_urls:
         groups.append((current_group, current_urls[:]))
 
-    print(f"✅ 共解析到 {len(groups)} 个分组，开始下载...\n")
+    print(f"✅ 共解析到 {len(groups)} 个分组，开始处理...\n")
 
     total = 0
+    kernel_count = {}   # 用于处理同名内核序号
+
     for group_id, urls in groups:
-        # 生成文件名（使用格式标识）
-        filename = sanitize_filename(group_id.replace("#", "").strip())
-        if not filename:
-            filename = f"group_{len(groups)}"
+        # 从分组标题中提取内核名作为文件名
+        kernel_name = extract_kernel_name(group_id)
         
+        # 处理同名文件序号
+        kernel_count[kernel_name] = kernel_count.get(kernel_name, 0) + 1
+        suffix = f"_{kernel_count[kernel_name]}" if kernel_count[kernel_name] > 1 else ""
+        
+        filename = sanitize_filename(kernel_name) + suffix
         output_file = os.path.join(output_dir, f"{filename}.txt")
 
-        print(f"📂 处理分组：{group_id} → {output_file} ({len(urls)} 个地址)")
+        print(f"📂 处理分组：{group_id} → {output_file}  (内核: {kernel_name})")
 
         with open(output_file, "w", encoding="utf-8") as out:
             out.write(f"# =======================\n")
-            out.write(f"# {group_id}\n")
+            out.write(f"# 分组标题: {group_id}\n")
+            out.write(f"# 内核类型: {kernel_name}\n")
             out.write(f"# 由 merge_sources.py 自动生成\n")
             out.write(f"# =======================\n\n")
 
