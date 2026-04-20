@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from collections import defaultdict
 
+
 def extract_subscription_urls(bat_content: str) -> list[str]:
     """原提取逻辑（保持不变）"""
     urls = []
@@ -13,6 +14,21 @@ def extract_subscription_urls(bat_content: str) -> list[str]:
             urls.append(url)
     seen = set()
     return [url for url in urls if not (url in seen or seen.add(url))]
+
+
+def find_client_dirs(root_dir: Path) -> list[str]:
+    """自动识别包含 ip_Update/*.bat 的顶级目录"""
+    client_dirs = set()
+
+    for ip_update_dir in root_dir.rglob("ip_Update"):
+        if not ip_update_dir.is_dir():
+            continue
+
+        # 检查是否包含 bat 文件
+        if any(ip_update_dir.glob("*.bat")):
+            client_dirs.add(ip_update_dir.parent.name)
+
+    return sorted(client_dirs)
 
 
 def process_folder(top_folder: str, root_dir: Path):
@@ -82,7 +98,10 @@ def main():
     output_dir = root_dir / "urls"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    clients = ["EdgeGo", "ChromeGo", "FirefoxFQ"]
+    # 自动识别客户端目录
+    clients = find_client_dirs(root_dir)
+    print("自动识别到客户端目录：", clients)
+
     all_groups = defaultdict(list)
 
     print("=== 开始提取订阅地址 ===\n")
@@ -105,7 +124,7 @@ def main():
 
     write_sources_file(final_groups, output_dir / "sources.txt")
 
-    print("\n🎉 处理完成！请检查 urls/ 目录下的 4 个文件内容是否正常。")
+    print("\n🎉 处理完成！请检查 urls/ 目录下的文件内容是否正常。")
 
 
 if __name__ == "__main__":
