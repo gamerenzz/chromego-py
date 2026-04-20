@@ -1,13 +1,12 @@
 name: 更新订阅地址 sources.txt
 
 on:
-  # 仅支持手动触发，不会自动运行
   workflow_dispatch:
     inputs:
       run_description:
         description: '运行说明（可选）'
         required: false
-        default: '手动更新 sources.txt'
+        default: '手动更新四个 sources.txt 文件'
         type: string
 
 jobs:
@@ -24,49 +23,33 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          # 已移除 cache: 'pip'，避免无依赖时产生警告
 
-      - name: 运行 update_sources.py 生成最新 sources.txt
+      - name: 运行 update_sources.py 生成 4 个文件
         run: |
           python update_sources.py
 
-      - name: 检查 sources.txt 是否有实际变更
-        id: git-check
-        run: |
-          if git diff --quiet HEAD -- urls/sources.txt; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "✅ sources.txt 内容没有变化，无需提交"
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "🔄 sources.txt 已更新，即将提交"
-          fi
-
-      - name: 配置 Git 用户信息
-        if: steps.git-check.outputs.changed == 'true'
+      - name: 配置 Git 用户
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: 拉取最新远程代码并 rebase（自动处理冲突）
-        if: steps.git-check.outputs.changed == 'true'
+      - name: 拉取最新代码并 rebase
         run: |
-          git pull --rebase --autostash origin main
-          echo "✅ 已成功 rebase 远程最新代码"
+          git pull --rebase --autostash origin main || echo "Rebase done"
 
-      - name: 提交并推送更新
-        if: steps.git-check.outputs.changed == 'true'
+      - name: 提交并推送 4 个文件
         run: |
-          git add urls/sources.txt
-          git commit -m "chore: 更新 sources.txt (手动触发)"
-          git push origin main
+          git add urls/EdgeGo_sources.txt urls/ChromeGo_sources.txt urls/FirefoxFQ_sources.txt urls/sources.txt
+          
+          if git diff --cached --quiet; then
+            echo "✅ 四个文件均无变化，无需提交"
+          else
+            git commit -m "chore: 更新四个 sources.txt 文件 (手动触发)"
+            git push origin main
+            echo "✅ 已提交并推送 4 个文件"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 执行结果
-        run: |
-          echo "🎉 Workflow 执行完成！"
-          if [ "${{ steps.git-check.outputs.changed }}" = "true" ]; then
-            echo "   ✅ sources.txt 已更新并成功推送到 main 分支"
-          else
-            echo "   ✅ sources.txt 无变化，本次无需提交"
-          fi
+        run: echo "🎉 Workflow 执行完成！"
