@@ -14,36 +14,14 @@
   [https://raw.githubusercontent.com/用户名/chromego_py/main/outputs/clash_meta.yaml](https://raw.githubusercontent.com/用户名/chromego_py/main/outputs/clash_meta.yaml)
 
 
-### 本地运行：
-<details>
+#### 1. main.py用来提取节点并推送，main.yml自动每天运行。
 
-#### 1. 环境要求
-确保你的环境满足以下要求：
-- Python 3.x
-- 安装所需的依赖：`pip install requests`
-
-#### 2. 下载脚本
-克隆本项目到本地：
-```bash
-git clone https://github.com/linzjian666/chromego-extractor.git
-```
-
-#### 3. 运行脚本
-1. 进入项目目录：
-```bash
-cd chromego-extractor
-```
-2. 运行脚本：
-```bash
-python main.py
-```
-
-#### 4. 获取代理信息
+#### 2. 获取代理信息
 脚本将提取 ChromeGo 代理节点信息，并保存到`outputs`目录中，其中sources.txt是Chromego提取出的订阅，sources-j.txt是增加的互联网其他订阅，订阅格式都直接写地址，一行一个，不加其他内容。
 
-#### 5. update_sources.py是把edgego、chromego、firefoxfq翻墙软件中的ip_update文件夹上传到项目中，自动提取bat文件中的订阅地址
+#### 3. update_sources.py是把edgego、chromego、firefoxfq翻墙软件中的ip_update文件夹上传到项目中，自动提取bat文件中的订阅地址，update_soures.yml手动触发。
 
-#### 6. merge_sources.py是将订阅按分类将打开订阅后看到的内容简单叠加汇总，不能做为订阅源被引用。
+#### 4. merge_sources.py是将订阅按分类将打开订阅后看到的内容简单叠加汇总，不能做为订阅源被引用，merge-subscriptions.yml手动触发。
 
 
 
