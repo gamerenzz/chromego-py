@@ -52,23 +52,39 @@ def process_clash(data: str):
         for p in proxies:
             if not isinstance(p, dict) or not p.get('server'): continue
             p = dict(p)
-            # 移除错误的全局 udp 标记
-            if 'udp' in p: del p['udp']
             
-            if 'up' in p: p['up'] = parse_bw_int(p['up'])
-            if 'down' in p: p['down'] = parse_bw_int(p['down'])
-            
+            # 【像素级对齐】Hysteria 1 核心字段清理
             if p.get('type') == 'hysteria':
                 auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
-                p.update({"auth-str": auth, "auth_str": auth, "fast-open": False})
+                # 只保留网友版本有的字段，删除冗余的 sni 和 protocol
+                clean_p = {
+                    "name": "", # 稍后填入
+                    "server": p.get('server'),
+                    "port": int(p.get('port')),
+                    "type": "hysteria",
+                    "auth_str": auth,
+                    "auth-str": auth,
+                    "up": parse_bw_int(p.get('up')),
+                    "down": parse_bw_int(p.get('down')),
+                    "fast-open": False,
+                    "skip-cert-verify": True,
+                    "alpn": ["h3"]
+                }
+                p = clean_p
             elif p.get('type') == 'hysteria2':
                 auth = p.get('password') or p.get('auth') or ''
-                p.update({"password": auth, "auth": auth, "skip-cert-verify": True})
+                p = {
+                    "name": "",
+                    "server": p.get('server'),
+                    "port": int(p.get('port')),
+                    "type": "hysteria2",
+                    "password": auth,
+                    "auth": auth,
+                    "sni": p.get('sni', 'www.bing.com'),
+                    "skip-cert-verify": True,
+                    "alpn": ["h3"]
+                }
             
-            # 修复 VLESS 冲突
-            if p.get('type') == 'vless' and p.get('network') != 'tcp':
-                if 'flow' in p: del p['flow']
-
             fp = make_fingerprint(p)
             if fp not in servers_list:
                 loc = get_location(p.get('server'))
@@ -90,22 +106,32 @@ def process_json(data: str):
                 if not s: continue
                 addr = str(s).split(',')[0]
                 host, port = (addr.rsplit(':', 1) if ':' in addr else (addr, 443))
+                host = host.strip('[]')
                 auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
-                # H2 SNI 补丁：如果为空，尝试给个默认值防止握手失败
-                sni = content.get('sni') or content.get('server_name') or (host if not host.replace('.','').isdigit() else 'www.bing.com')
                 
                 if typ == "hysteria":
-                    p = {"type": "hysteria", "server": host.strip('[]'), "port": int(port), "auth-str": auth, "auth_str": auth, "up": parse_bw_int(content.get('up')), "down": parse_bw_int(content.get('down')), "sni": sni, "skip-cert-verify": True, "alpn": ["h3"], "protocol": "udp", "fast-open": False}
+                    # 【像素级对齐】H1 不输出 SNI 和 Protocol
+                    p = {
+                        "server": host, "port": int(port), "type": "hysteria",
+                        "auth_str": auth, "auth-str": auth,
+                        "up": parse_bw_int(content.get('up')), "down": parse_bw_int(content.get('down')),
+                        "fast-open": False, "skip-cert-verify": True, "alpn": ["h3"]
+                    }
                 else:
-                    p = {"type": "hysteria2", "server": host.strip('[]'), "port": int(port), "password": auth, "auth": auth, "sni": sni, "skip-cert-verify": True, "alpn": ["h3"]}
+                    p = {
+                        "server": host, "port": int(port), "type": "hysteria2",
+                        "password": auth, "auth": auth,
+                        "sni": content.get('sni') or content.get('server_name') or 'www.bing.com',
+                        "skip-cert-verify": True, "alpn": ["h3"]
+                    }
                 
                 fp = make_fingerprint(p)
                 if fp not in servers_list:
-                    p['name'] = f"{get_location(p['server'])}-{typ.upper()}-{len(extracted_proxies)+1}"
+                    p['name'] = f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}"
                     extracted_proxies.append(p)
                     servers_list.append(fp)
         
-        # VLESS 深度修复逻辑
+        # VLESS 全量逻辑
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             if (ob.get('protocol') or ob.get('type') or '').lower() == 'vless':
@@ -115,26 +141,17 @@ def process_json(data: str):
                 stream = ob.get('streamSettings', {})
                 reality = stream.get('realitySettings', {}) or stream.get('tlsSettings', {})
                 network = stream.get('network', 'tcp')
-                
                 p = {
                     "type": "vless", "server": server, "port": int(vnext.get('port', 443)),
-                    "uuid": vnext.get('users', [{}])[0].get('id'), 
-                    "network": network, "tls": True,
+                    "uuid": vnext.get('users', [{}])[0].get('id'), "network": network, "tls": True,
                     "sni": reality.get('serverName', ''), "client-fingerprint": reality.get('fingerprint', 'chrome'), "alpn": ["h3"]
                 }
-                # 【核心修复】只有 TCP 才能带 flow
-                if network == 'tcp':
-                    p['flow'] = vnext.get('users', [{}])[0].get('flow', '')
-                
+                if network == 'tcp': p['flow'] = vnext.get('users', [{}])[0].get('flow', '')
                 if stream.get('security') == 'reality':
                     p['reality-opts'] = {"public-key": reality.get('publicKey', ''), "short-id": reality.get('shortId', '')}
                     p['skip-cert-verify'] = False
-                else:
-                    p['skip-cert-verify'] = True
-
-                if network == 'xhttp':
-                    p['xhttp-opts'] = {"path": stream.get('xhttpSettings', {}).get('path', '/'), "mode": "auto"}
-                
+                else: p['skip-cert-verify'] = True
+                if network == 'xhttp': p['xhttp-opts'] = {"path": stream.get('xhttpSettings', {}).get('path', '/'), "mode": "auto"}
                 p = {k: v for k, v in p.items() if v not in (None, '', {}, [])}
                 fp = make_fingerprint(p)
                 if fp not in servers_list:
