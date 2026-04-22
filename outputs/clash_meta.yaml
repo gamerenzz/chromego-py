@@ -226,7 +226,7 @@ proxy-groups:
   type: select
   proxies:
   - ♻️ 自动选择
-  - 🎯 全球直连
+  - DIRECT
   - 🇹🇼TW-VLESS-1
   - 🇩🇪DE-VLESS-2
   - 🇺🇸US-VLESS-3
