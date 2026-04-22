@@ -8,7 +8,6 @@ dns:
   nameserver:
   - 119.29.29.29
   - 223.5.5.5
-  - 1.1.1.1
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
 proxies:
@@ -17,11 +16,9 @@ proxies:
   server: 118.166.0.164
   port: 44965
   uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
-  flow: xtls-rprx-vision
   network: xhttp
   tls: true
   sni: www.cloudflare.com
-  client-fingerprint: chrome
   alpn:
   - h3
   reality-opts:
@@ -35,11 +32,9 @@ proxies:
   server: 89.144.35.230
   port: 54582
   uuid: 5cfc52bc-e701-4160-89df-930a0c040576
-  flow: xtls-rprx-vision
   network: xhttp
   tls: true
   sni: apple.com
-  client-fingerprint: chrome
   alpn:
   - h3
   reality-opts:
@@ -53,11 +48,9 @@ proxies:
   server: 157.254.223.137
   port: 24089
   uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
-  flow: xtls-rprx-vision
   network: xhttp
   tls: true
   sni: www.microsoft.com
-  client-fingerprint: chrome
   alpn:
   - h3
   reality-opts:
@@ -74,7 +67,6 @@ proxies:
   network: xhttp
   tls: true
   sni: toarumajutsunoindex.fandom.com
-  client-fingerprint: chrome
   alpn:
   - h3
   reality-opts:
@@ -152,9 +144,10 @@ proxies:
   server: 5.83.129.153
   port: 20088
   password: dongtaiwang.com
-  sni: apple.com
+  sni: ''
   skip-cert-verify: true
-  alpn: h3
+  alpn:
+  - h3
   auth-str: dongtaiwang.com
   up: 11
   down: 55
@@ -163,9 +156,10 @@ proxies:
   server: 5.83.129.90
   port: 54177
   password: dongtaiwang.com
-  sni: apple.com
+  sni: ''
   skip-cert-verify: true
-  alpn: h3
+  alpn:
+  - h3
   auth-str: dongtaiwang.com
   up: 11
   down: 55
@@ -276,7 +270,5 @@ proxy-groups:
   - DIRECT
   - 🚀 节点选择
 rules:
-- DOMAIN-SUFFIX,google.com,🚀 节点选择
-- DOMAIN-KEYWORD,github,🚀 节点选择
 - GEOIP,CN,🎯 全球直连
 - MATCH,🚀 节点选择
