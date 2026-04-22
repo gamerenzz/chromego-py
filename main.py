@@ -2,8 +2,8 @@
 # -*- coding: UTF-8 -*-
 """
 ChromeGo Enhanced v3.6.2 - 最终稳定版
-- 修复：loop is detected 报错（删除了策略组间的循环引用）
-- 修复：'alpn' is not a slice 报错（强制转换 alpn 为列表）
+- 修复：Loop detected 策略组死循环报错
+- 修复：'alpn' is not a slice 报错
 - 修复：DNS 自动解析与国旗命名
 """
 import yaml
@@ -57,7 +57,6 @@ def make_fingerprint(p: dict) -> str:
     return hashlib.md5(key.lower().encode()).hexdigest()
 
 def ensure_alpn_list(alpn):
-    """强制转换 ALPN 为列表，解决 'is not a slice' 报错"""
     if not alpn: return ["h3"]
     if isinstance(alpn, str): return [alpn]
     if isinstance(alpn, list): return alpn
@@ -93,7 +92,7 @@ def parse_vless_link(link: str) -> dict | None:
             "sni": params.get('sni', [''])[0] or params.get('serverName', [''])[0],
             "flow": params.get('flow', [''])[0],
             "client-fingerprint": params.get('fp', ['chrome'])[0],
-            "alpn": ensure_alpn_list(params.get('alpn'))
+            "alpn": ensure_alpn_list(params.get('alpn', ["h3"]))
         }
         if params.get('security', [''])[0] == 'reality':
             p['reality-opts'] = {"public-key": params.get('pbk', [''])[0], "short-id": params.get('sid', [''])[0]}
@@ -146,7 +145,6 @@ def process_json(data: str):
                 if fp not in servers_list:
                     extracted_proxies.append(p)
                     servers_list.append(fp)
-
         for ob in content.get('outbounds', []):
             if (ob.get('protocol') or ob.get('type','')).lower() != 'vless': continue
             vnext = ob.get('settings', {}).get('vnext', [{}])[0]
@@ -221,7 +219,7 @@ if __name__ == "__main__":
     process_file("urls/sources.txt")
     node_names = [p['name'] for p in extracted_proxies]
     
-    # ======== 核心修复：消除策略组回环引用 ========
+    # ======== 修复策略组死循环逻辑 ========
     clash_config = {
         "mixed-port": 7890, "allow-lan": True, "mode": "rule", "log-level": "info", "ipv6": True,
         "dns": {"enabled": True, "nameserver": ["119.29.29.29", "223.5.5.5"], "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16"},
@@ -230,7 +228,7 @@ if __name__ == "__main__":
             {
                 "name": "🚀 节点选择", 
                 "type": "select", 
-                "proxies": ["♻️ 自动选择", "DIRECT"] + node_names # 👈 删除了 "🎯 全球直连"，打破循环
+                "proxies": ["♻️ 自动选择", "DIRECT"] + node_names # 移除了可能会导致循环的“🎯 全球直连”
             },
             {
                 "name": "♻️ 自动选择", 
@@ -242,7 +240,7 @@ if __name__ == "__main__":
             {
                 "name": "🎯 全球直连", 
                 "type": "select", 
-                "proxies": ["DIRECT", "🚀 节点选择"] # 👈 保留这个，允许规则分流切换回代理
+                "proxies": ["DIRECT", "🚀 节点选择"] # 这里的“🚀 节点选择”是安全的，因为它是下级
             }
         ],
         "rules": [
@@ -250,8 +248,6 @@ if __name__ == "__main__":
             "MATCH,🚀 节点选择"
         ]
     }
-    # ============================================
-
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump(clash_config, f, allow_unicode=True, sort_keys=False)
     print(f"✅ 处理完成，共 {len(extracted_proxies)} 个节点。")
