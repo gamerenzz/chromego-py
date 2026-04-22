@@ -1,76 +1,5 @@
 proxies:
-- name: 🇹🇼 TW-New Taipei-VLESS-1
-  type: vless
-  server: 118.166.0.164
-  port: 44965
-  uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
-  flow: xtls-rprx-vision
-  network: xhttp
-  tls: true
-  sni: www.cloudflare.com
-  client-fingerprint: chrome
-  alpn:
-  - h3
-  reality-opts:
-    public-key: z1_FVLAxN66t1373faq2D-BV8B7CyILrwc0vMiYw9Cc
-    short-id: d3c7911a
-  xhttp-opts:
-    path: /tvFTD707
-    mode: auto
-- name: 🇩🇪 DE-VLESS-2
-  type: vless
-  server: 89.144.35.230
-  port: 54582
-  uuid: 5cfc52bc-e701-4160-89df-930a0c040576
-  flow: xtls-rprx-vision
-  network: xhttp
-  tls: true
-  sni: apple.com
-  client-fingerprint: chrome
-  alpn:
-  - h3
-  reality-opts:
-    public-key: kfw5DgkyKiovC3dzb-o2PUYnZPnbYvbx2IwERUv9czY
-    short-id: 225e2cc8
-  xhttp-opts:
-    path: 5cfc52bc-e701-4160-89df-930a0c040576-xh
-    mode: auto
-- name: 🇺🇸 US-Providence-VLESS-3
-  type: vless
-  server: 157.254.223.137
-  port: 24089
-  uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
-  flow: xtls-rprx-vision
-  network: xhttp
-  tls: true
-  sni: www.microsoft.com
-  client-fingerprint: chrome
-  alpn:
-  - h3
-  reality-opts:
-    public-key: njrfRguP2WJFUtBH11bJTaIEfGIb28V7_Sahlhbldyw
-    short-id: 54ffd503
-  xhttp-opts:
-    path: /S6wHAExO
-    mode: auto
-- name: UNK-VLESS-4
-  type: vless
-  server: 2a14:7584:d097::a
-  port: 11330
-  uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
-  network: xhttp
-  tls: true
-  sni: toarumajutsunoindex.fandom.com
-  client-fingerprint: chrome
-  alpn:
-  - h3
-  reality-opts:
-    public-key: 3HaD5Ztk3X4gi3aJLVesV6KSJTW2YGG-hvGD3ZumJkE
-    short-id: fa789b2f5ff56959
-  xhttp-opts:
-    path: /alvin9999.com
-    mode: auto
-- name: UNK-HYSTERIA-5
+- name: UNK-HYSTERIA-1
   type: hysteria
   server: 2a14:7584:d097::a
   port: 54177
@@ -80,11 +9,13 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 11 Mbps
-  down: 55 Mbps
+  up: 11
+  down: 55
   auth_str: dongtaiwang.com
+  up-mbps: 11
+  down-mbps: 55
   fast-open: false
-- name: UNK-TUIC-6
+- name: UNK-TUIC-2
   server: ip1.758733.xyz
   port: 10088
   type: tuic
@@ -97,7 +28,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- name: 🇩🇪 DE-TUIC-7
+- name: 🇩🇪 DE-TUIC-3
   server: 178.18.147.199
   port: 42487
   type: tuic
@@ -110,7 +41,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- name: 🇫🇷 FR-TUIC-8
+- name: 🇫🇷 FR-TUIC-4
   server: 163.172.116.154
   port: 33887
   type: tuic
@@ -123,7 +54,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- name: 🇫🇷 FR-TUIC-9
+- name: 🇫🇷 FR-TUIC-5
   server: 5.178.101.117
   port: 30006
   type: tuic
@@ -136,98 +67,115 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- name: 🇩🇪 DE-HYSTERIA-10
-  type: hysteria
+- type: hysteria
   server: 5.83.129.153
   port: 20088
   auth-str: dongtaiwang.com
   auth_str: dongtaiwang.com
+  up: 11
+  down: 55
+  up-mbps: 11
+  down-mbps: 55
   sni: apple.com
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
-  up: 11 Mbps
-  down: 55 Mbps
   fast-open: false
-- name: 🇩🇪 DE-HYSTERIA-11
-  type: hysteria
+  name: 🇩🇪 DE-HYSTERIA-6
+- type: hysteria
   server: 5.83.129.90
   port: 54177
   auth-str: dongtaiwang.com
   auth_str: dongtaiwang.com
+  up: 11
+  down: 55
+  up-mbps: 11
+  down-mbps: 55
   sni: apple.com
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
-  up: 11 Mbps
-  down: 55 Mbps
   fast-open: false
-- name: 🇺🇸 US-Providence-HYSTERIA2-12 (28000-29000)
-  type: hysteria2
+  name: 🇩🇪 DE-HYSTERIA-7
+- type: hysteria
   server: 157.254.223.43
   port: 27921
-  password: dongtaiwang.com
-  auth: dongtaiwang.com
-  sni: www.bing.com
+  auth-str: dongtaiwang.com
+  auth_str: dongtaiwang.com
+  up: 100
+  down: 100
+  up-mbps: 100
+  down-mbps: 100
+  sni: ''
   skip-cert-verify: true
   alpn:
   - h3
-  ports: 28000-29000
-- name: 🇫🇷 FR-HYSTERIA-13
-  type: hysteria
+  protocol: udp
+  fast-open: false
+  name: 🇺🇸 US-Providence-HYSTERIA-8
+- type: hysteria
   server: 2001:bc8:32d7:17b::3
   port: 22000
   auth-str: dongtaiwang.com
   auth_str: dongtaiwang.com
-  sni: www.microsoft.com
+  up: 100
+  down: 100
+  up-mbps: 100
+  down-mbps: 100
+  sni: ''
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
-  up: 100 Mbps
-  down: 100 Mbps
   fast-open: false
-- name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA-14
-  type: hysteria
+  name: 🇫🇷 FR-HYSTERIA-9
+- type: hysteria
   server: 2a10:3c80:0:f::2
   port: 39463
   auth-str: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   auth_str: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
-  sni: www.microsoft.com
+  up: 100
+  down: 100
+  up-mbps: 100
+  down-mbps: 100
+  sni: ''
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
-  up: 100 Mbps
-  down: 100 Mbps
   fast-open: false
-- name: UNK-HYSTERIA-15
-  type: hysteria
+  name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA-10
+- type: hysteria
   server: fan.193919.xyz
   port: 45889
   auth-str: dongtaiwang.com
   auth_str: dongtaiwang.com
+  up: 100
+  down: 100
+  up-mbps: 100
+  down-mbps: 100
   sni: fan.193919.xyz
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
-  up: 100 Mbps
-  down: 100 Mbps
   fast-open: false
-- name: 🇩🇪 DE-HYSTERIA-16
-  type: hysteria
+  name: UNK-HYSTERIA-11
+- type: hysteria
   server: 5.83.129.153
   port: 22222
   auth-str: dongtaiwang.com
   auth_str: dongtaiwang.com
+  up: 100
+  down: 100
+  up-mbps: 100
+  down-mbps: 100
   sni: bing.com
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
-  up: 100 Mbps
-  down: 100 Mbps
   fast-open: false
+  name: 🇩🇪 DE-HYSTERIA-12
