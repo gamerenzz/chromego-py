@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 import yaml
@@ -76,24 +77,35 @@ def process_clash(data: str):
             node["type"] = p_type
             
             if p_type == 'hysteria':
+                # 修复：移除 fast-open 和 protocol 字段，保留核心参数
                 node.update({
-                    "auth_str": encoded_auth, "auth-str": encoded_auth,
-                    "up": 100, "down": 100, "fast-open": False,
-                    "protocol": "udp", "skip-cert-verify": True, "alpn": ['h3']
+                    "auth_str": encoded_auth,
+                    "auth-str": encoded_auth,
+                    "up": p.get('up', 100),
+                    "down": p.get('down', 100),
+                    "skip-cert-verify": p.get('skip-cert-verify', True),
+                    "alpn": p.get('alpn', ['h3'])
                 })
             elif p_type == 'hysteria2':
                 node.update({
-                    "password": encoded_auth, "auth": encoded_auth,
-                    "skip-cert-verify": False, "alpn": ['h3'],
+                    "password": encoded_auth,
+                    "auth": encoded_auth,
+                    "skip-cert-verify": p.get('skip-cert-verify', True),   # 继承原值，默认 True
+                    "alpn": p.get('alpn', ['h3']),
                     "sni": p.get('sni', 'www.bing.com')
                 })
                 if p.get('ports'): node['ports'] = p.get('ports')
             elif p_type == 'tuic':
                 node.update({
-                    "uuid": p.get('uuid'), "password": encoded_auth,
-                    "skip-cert-verify": False, "alpn": ['h3'], "udp-relay-mode": "native", "congestion-controller": "bbr"
+                    "uuid": p.get('uuid'),
+                    "password": encoded_auth,
+                    "skip-cert-verify": p.get('skip-cert-verify', False),
+                    "alpn": p.get('alpn', ['h3']),
+                    "udp-relay-mode": p.get('udp-relay-mode', 'native'),
+                    "congestion-controller": p.get('congestion-controller', 'bbr')
                 })
             else:
+                # vless, vmess, trojan 等直接复制原字段
                 for k, v in p.items():
                     if k not in node: node[k] = v
 
@@ -101,7 +113,8 @@ def process_clash(data: str):
             if fp not in servers_list:
                 extracted_proxies.append(node)
                 servers_list.append(fp)
-    except: pass
+    except Exception as e:
+        logger.debug(f"process_clash error: {e}")
 
 def process_json(data: str):
     try:
@@ -128,16 +141,22 @@ def process_json(data: str):
                 node["type"] = typ
                 
                 if typ == "hysteria":
+                    # 修复：移除 fast-open 和 protocol
                     node.update({
-                        "auth_str": encoded_auth, "auth-str": encoded_auth,
-                        "up": 100, "down": 100, "fast-open": False,
-                        "protocol": "udp", "skip-cert-verify": True, "alpn": ['h3']
+                        "auth_str": encoded_auth,
+                        "auth-str": encoded_auth,
+                        "up": content.get('up', 100),
+                        "down": content.get('down', 100),
+                        "skip-cert-verify": content.get('skip-cert-verify', True),
+                        "alpn": content.get('alpn', ['h3'])
                     })
-                else:
+                else:  # hysteria2
                     node.update({
-                        "password": encoded_auth, "auth": encoded_auth,
-                        "sni": content.get('sni') or 'www.bing.com',
-                        "skip-cert-verify": False, "alpn": ['h3']
+                        "password": encoded_auth,
+                        "auth": encoded_auth,
+                        "sni": content.get('sni', 'www.bing.com'),
+                        "skip-cert-verify": content.get('skip-cert-verify', True),
+                        "alpn": content.get('alpn', ['h3'])
                     })
                     if ports_hopping: node['ports'] = ports_hopping
 
@@ -146,7 +165,7 @@ def process_json(data: str):
                     extracted_proxies.append(node)
                     servers_list.append(fp)
         
-        # VLESS 逻辑完全保持
+        # VLESS 解析逻辑（保持不变）
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             if (ob.get('protocol') or ob.get('type') or '').lower() == 'vless':
@@ -158,20 +177,34 @@ def process_json(data: str):
                 network = stream.get('network', 'tcp')
                 node = {"name": f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}"}
                 node.update({
-                    "server": server, "port": int(vnext.get('port', 443)), "type": "vless",
-                    "uuid": vnext.get('users', [{}])[0].get('id'), "network": network, "tls": True,
-                    "sni": reality.get('serverName', 'www.bing.com'), "alpn": ['h3'], "skip-cert-verify": False
+                    "server": server,
+                    "port": int(vnext.get('port', 443)),
+                    "type": "vless",
+                    "uuid": vnext.get('users', [{}])[0].get('id'),
+                    "network": network,
+                    "tls": True,
+                    "sni": reality.get('serverName', 'www.bing.com'),
+                    "alpn": ['h3'],
+                    "skip-cert-verify": False
                 })
-                if network == 'tcp': node['flow'] = vnext.get('users', [{}])[0].get('flow', '')
+                if network == 'tcp':
+                    node['flow'] = vnext.get('users', [{}])[0].get('flow', '')
                 if stream.get('security') == 'reality':
-                    node['reality-opts'] = {"public-key": reality.get('publicKey', ''), "short-id": reality.get('shortId', '')}
+                    node['reality-opts'] = {
+                        "public-key": reality.get('publicKey', ''),
+                        "short-id": reality.get('shortId', '')
+                    }
                 if network == 'xhttp':
-                    node['xhttp-opts'] = {"path": stream.get('xhttpSettings', {}).get('path', '/'), "mode": "auto"}
+                    node['xhttp-opts'] = {
+                        "path": stream.get('xhttpSettings', {}).get('path', '/'),
+                        "mode": "auto"
+                    }
                 fp = make_fingerprint(node)
                 if fp not in servers_list:
                     extracted_proxies.append(node)
                     servers_list.append(fp)
-    except: pass
+    except Exception as e:
+        logger.debug(f"process_json error: {e}")
 
 def process_file(file_path: str):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -181,15 +214,21 @@ def process_file(file_path: str):
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=20) as resp:
                 raw = resp.read().decode('utf-8', errors='ignore')
-            process_clash(raw) if ('proxies:' in raw or 'proxy:' in raw) else process_json(raw)
-        except: pass
+            # 根据内容格式选择解析器
+            if 'proxies:' in raw or 'proxy:' in raw:
+                process_clash(raw)
+            else:
+                process_json(raw)
+        except Exception as e:
+            logger.warning(f"下载失败 {url}: {e}")
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
+    # 请确保存在 urls/sources.txt 文件，每行一个订阅链接
     process_file("urls/sources.txt")
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         f.write("proxies:\n")
         for proxy in extracted_proxies:
             yaml_str = yaml.dump(proxy, Dumper=PureDumper, allow_unicode=True, sort_keys=False, width=float("inf"))
             f.write(f"  - {yaml_str.strip()}\n")
-    print(f"✅ 终极修复完成，共 {len(extracted_proxies)} 个节点")
+    print(f"✅ 修复完成，共 {len(extracted_proxies)} 个节点")
