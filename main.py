@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-ChromeGo Enhanced v3.6.3 - 终极稳定版
-- 修复：Gemini 解锁增强（优化 DNS 解析与分流规则）
+ChromeGo Enhanced v3.6.2 - 最终稳定版
 - 修复：Loop detected 策略组死循环报错
 - 修复：'alpn' is not a slice 报错
 - 修复：DNS 自动解析与国旗命名
@@ -32,7 +31,6 @@ logger = logging.getLogger("ChromeGo")
 servers_list: list[str] = []
 extracted_proxies: list[dict] = []
 
-# 地理位置查询
 geo_reader = None
 try:
     geo_reader = geoip2.database.Reader('GeoLite2-City.mmdb')
@@ -40,38 +38,25 @@ except Exception:
     logger.warning("GeoLite2-City.mmdb 未找到。")
 
 def get_location(host: str) -> str:
-    """解析主机并返回带国旗的地区标识"""
-    if not geo_reader or not host:
-        return "🏳️UNK"
-    
+    if not geo_reader or not host: return "🏳️UNK"
     ip = host
     if not re.match(r"^\d{1,3}(\.\d{1,3}){3}$", host) and ":" not in host:
-        try:
-            ip = socket.gethostbyname(host)
-        except:
-            pass
-
+        try: ip = socket.gethostbyname(host)
+        except: pass
     try:
         resp = geo_reader.city(ip.strip('[]'))
         c_code = resp.country.iso_code or "UNK"
-        flags = {
-            "CN": "🇨🇳", "US": "🇺🇸", "JP": "🇯🇵", "HK": "🇭🇰", "SG": "🇸🇬", 
-            "TW": "🇹🇼", "DE": "🇩🇪", "FR": "🇫🇷", "GB": "🇬🇧", "KR": "🇰🇷",
-            "NL": "🇳🇱", "RU": "🇷🇺", "CA": "🇨🇦", "AU": "🇦🇺", "IN": "🇮🇳"
-        }
+        flags = {"CN": "🇨🇳", "US": "🇺🇸", "JP": "🇯🇵", "HK": "🇭🇰", "SG": "🇸🇬", "TW": "🇹🇼", "DE": "🇩🇪", "FR": "🇫🇷", "GB": "🇬🇧", "KR": "🇰🇷", "NL": "🇳🇱", "RU": "🇷🇺", "CA": "🇨🇦", "AU": "🇦🇺", "IN": "🇮🇳"}
         return f"{flags.get(c_code, '🏳️')}{c_code}"
-    except:
-        return "🏳️UNK"
+    except: return "🏳️UNK"
 
 def make_fingerprint(p: dict) -> str:
-    """生成节点指纹用于去重"""
     key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|" \
           f"{p.get('uuid') or p.get('password') or p.get('auth-str','')}|" \
           f"{p.get('network','')}|{p.get('sni','')}"
     return hashlib.md5(key.lower().encode()).hexdigest()
 
 def ensure_alpn_list(alpn):
-    """强制将 ALPN 转换为列表格式，修复 Clash 报错"""
     if not alpn: return ["h3"]
     if isinstance(alpn, str): return [alpn]
     if isinstance(alpn, list): return alpn
@@ -83,8 +68,7 @@ def preprocess_subscription(data: str) -> str:
     try:
         padding = '=' * (-len(content) % 4)
         decoded = base64.b64decode(content + padding, validate=False).decode('utf-8', errors='ignore')
-        if any(decoded.startswith(prefix) for prefix in ('vmess://', 'vless://', 'ss://')):
-            return decoded
+        if any(decoded.startswith(prefix) for prefix in ('vmess://', 'vless://', 'ss://')): return decoded
     except: pass
     return content
 
@@ -235,25 +219,16 @@ if __name__ == "__main__":
     process_file("urls/sources.txt")
     node_names = [p['name'] for p in extracted_proxies]
     
+    # ======== 修复策略组死循环逻辑 ========
     clash_config = {
-        "mixed-port": 7890, 
-        "allow-lan": True, 
-        "mode": "rule", 
-        "log-level": "info", 
-        "ipv6": True,
-        "dns": {
-            "enabled": True, 
-            "nameserver": ["8.8.8.8", "1.1.1.1"], # 强化：国外标准 DNS
-            "fallback": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"], # 强化：DoH
-            "enhanced-mode": "fake-ip", 
-            "fake-ip-range": "198.18.0.1/16"
-        },
+        "mixed-port": 7890, "allow-lan": True, "mode": "rule", "log-level": "info", "ipv6": True,
+        "dns": {"enabled": True, "nameserver": ["119.29.29.29", "223.5.5.5"], "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16"},
         "proxies": extracted_proxies,
         "proxy-groups": [
             {
                 "name": "🚀 节点选择", 
                 "type": "select", 
-                "proxies": ["♻️ 自动选择", "DIRECT"] + node_names 
+                "proxies": ["♻️ 自动选择", "DIRECT"] + node_names # 移除了可能会导致循环的“🎯 全球直连”
             },
             {
                 "name": "♻️ 自动选择", 
@@ -265,15 +240,10 @@ if __name__ == "__main__":
             {
                 "name": "🎯 全球直连", 
                 "type": "select", 
-                "proxies": ["DIRECT", "🚀 节点选择"] 
+                "proxies": ["DIRECT", "🚀 节点选择"] # 这里的“🚀 节点选择”是安全的，因为它是下级
             }
         ],
         "rules": [
-            # 强化：针对 AI/Google 服务的显式规则
-            "DOMAIN-KEYWORD,google,🚀 节点选择",
-            "DOMAIN-KEYWORD,gemini,🚀 节点选择",
-            "DOMAIN-SUFFIX,googleapis.com,🚀 节点选择",
-            "DOMAIN-SUFFIX,gstatic.com,🚀 节点选择",
             "GEOIP,CN,🎯 全球直连", 
             "MATCH,🚀 节点选择"
         ]
