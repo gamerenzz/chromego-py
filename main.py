@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-ChromeGo Enhanced v3.5.1 - 纯 Y 系列版（vless Reality + WS/xhttp 最终加强版）
-- 修复 节点名称重复导致的 Clash Meta 解析失败问题
-- 修复 vless xhttp 配置提取缺失问题
-- 修复 Hysteria1 带宽字段 (up_mbps) 提取失败问题
-- 修复 Hysteria2 SNI 字段提取失败问题
+ChromeGo Enhanced v3.5.2 - 纯 Y 系列版（终极修复版）
+- 修复 Hysteria up/down 包含字符串 (Mbps) 导致内核解析报错、节点不通的问题
+- 增加 Hysteria 1/2 认证字段双重别名兼容 (auth_str/auth-str, password/auth)
+- 增加节点名称自动附加国家 Emoji 图标
 """
 import yaml
 import json
@@ -17,7 +16,6 @@ import hashlib
 import re
 import base64
 import socket
-import time
 from urllib.parse import urlparse, parse_qs
 
 # ==================== 全局设置 ====================
@@ -40,16 +38,30 @@ try:
 except Exception:
     logger.warning("GeoLite2-City.mmdb 未找到，位置信息将显示 UNK")
 
+def get_flag(code: str) -> str:
+    """根据两位国家代码生成对应的 Emoji 国旗"""
+    if not code or len(code) != 2 or code == "UNK":
+        return ""
+    return chr(ord(code[0]) + 127397) + chr(ord(code[1]) + 127397)
+
 def get_location(ip: str) -> str:
     if not geo_reader or not ip:
         return "UNK"
     try:
         resp = geo_reader.city(str(ip).strip('[]'))
         c = resp.country.iso_code or "UNK"
+        flag = f"{get_flag(c)} " if get_flag(c) else ""
         city = resp.city.name or ""
-        return f"{c}-{city}" if city else c
+        return f"{flag}{c}-{city}" if city else f"{flag}{c}"
     except:
         return "UNK"
+
+def parse_bw(val) -> int:
+    """提取带宽值为纯整数，防止 '11 Mbps' 字符串导致内核罢工"""
+    if not val:
+        return 100
+    m = re.search(r'(\d+)', str(val))
+    return int(m.group(1)) if m else 100
 
 def make_fingerprint(p: dict) -> str:
     key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|" \
@@ -115,18 +127,6 @@ def process_file(file_path: str):
                 
                 processed_data = preprocess_subscription(raw_data)
 
-                # 处理 vless:// 直链
-                lines = [line.strip() for line in processed_data.splitlines() if line.strip()]
-                for line in lines:
-                    if line.startswith('vless://'):
-                        proxy = parse_vless_link(line)
-                        if proxy:
-                            fp = make_fingerprint(proxy)
-                            if fp not in servers_list:
-                                extracted_proxies.append(proxy)
-                                servers_list.append(fp)
-
-                # 原有 Clash / JSON 处理
                 if url.endswith(('.yaml', '.yml')) or 'proxies:' in processed_data or 'proxy:' in processed_data:
                     process_clash(processed_data)
                 else:
@@ -146,12 +146,28 @@ def process_clash(data: str):
             if not isinstance(p, dict) or not p.get('server'):
                 continue
             p = dict(p)
+            
+            # 【修复1】严格转换带宽为整数，防 "11 Mbps" 罢工
+            if 'up' in p: p['up'] = parse_bw(p['up'])
+            if 'down' in p: p['down'] = parse_bw(p['down'])
+
+            # 【修复2】双重别名保底，适应所有 Meta 版本
+            if p.get('type') == 'hysteria':
+                auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
+                p['auth-str'] = auth
+                p['auth_str'] = auth
+                if 'password' in p: del p['password']
+                p['fast-open'] = p.get('fast-open', False)
+            elif p.get('type') == 'hysteria2':
+                auth = p.get('password') or p.get('auth') or ''
+                p['password'] = auth
+                p['auth'] = auth
+
             fp = make_fingerprint(p)
             if fp in servers_list:
                 continue
            
             original_name = p.get('name', '')
-            # 【修复1】严格使用全局长度防止节点重名
             if original_name.startswith('Y-'):
                 base_name = original_name[2:]
             else:
@@ -184,39 +200,38 @@ def process_json(data: str):
                 server, main_port, ports_range = parse_server_port(s)
                 name_suffix = f" ({ports_range})" if ports_range else ""
                 
-                # 【修复4】深层获取 SNI (适配 Hysteria2 JSON)
                 tls_cfg = content.get('tls', {})
                 sni_val = content.get('sni') or content.get('peer') or content.get('server_name') or tls_cfg.get('sni', '')
 
                 if typ == "hysteria":
                     alpn = content.get('alpn')
-                    if isinstance(alpn, str):
-                        alpn = [alpn]
-                    elif not alpn:
-                        alpn = ["h3"]
+                    if isinstance(alpn, str): alpn = [alpn]
+                    elif not alpn: alpn = ["h3"]
                         
+                    auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
                     p = {
-                        # 【修复1】使用 len(extracted_proxies)+1 防重名
                         "name": f"{get_location(server)}-{typ.upper()}-{len(extracted_proxies)+1}{name_suffix}",
                         "type": typ,
                         "server": server,
                         "port": main_port,
-                        "password": content.get('auth') or content.get('password', content.get('auth_str', '')),
-                        "auth-str": content.get('auth_str') or content.get('auth') or content.get('password', ''),
+                        "auth-str": auth,
+                        "auth_str": auth,   # 增加兼容别名
                         "sni": sni_val,
                         "skip-cert-verify": content.get('insecure', tls_cfg.get('insecure', True)),
                         "alpn": alpn,
-                        # 【修复3】兼容官方的 up_mbps 写法
-                        "up": content.get('up_mbps') or content.get('upmbps') or content.get('up') or 100,
-                        "down": content.get('down_mbps') or content.get('downmbps') or content.get('down') or 100,
+                        "protocol": content.get('protocol', 'udp'),
+                        "up": parse_bw(content.get('up_mbps') or content.get('upmbps') or content.get('up')),
+                        "down": parse_bw(content.get('down_mbps') or content.get('downmbps') or content.get('down')),
                     }
                 else:
+                    auth = content.get('auth') or content.get('password', content.get('auth_str', ''))
                     p = {
                         "name": f"{get_location(server)}-{typ.upper()}-{len(extracted_proxies)+1}{name_suffix}",
                         "type": typ,
                         "server": server,
                         "port": main_port,
-                        "password": content.get('auth') or content.get('password', content.get('auth_str', '')),
+                        "password": auth,
+                        "auth": auth,       # 增加兼容别名
                         "sni": sni_val,
                         "skip-cert-verify": content.get('insecure', tls_cfg.get('insecure', True)),
                         "alpn": content.get('alpn', ["h3"]),
@@ -230,7 +245,7 @@ def process_json(data: str):
                     extracted_proxies.append(p)
                     servers_list.append(fp)
 
-        # ==================== vless 加强处理 ====================
+        # vless 加强处理
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             proto = (ob.get('protocol') or ob.get('type') or '').lower()
@@ -260,14 +275,12 @@ def process_json(data: str):
                 "alpn": reality.get('alpn', ["h3"]),
             }
 
-            # Reality 关键字段
             if stream.get('security') == 'reality':
                 p['reality-opts'] = {
                     "public-key": reality.get('publicKey', ''),
                     "short-id": reality.get('shortId', '')
                 }
 
-            # WS 配置加强
             if stream.get('network') == 'ws':
                 ws = stream.get('wsSettings', {})
                 headers = ws.get('headers', {})
@@ -278,7 +291,6 @@ def process_json(data: str):
                     "headers": headers
                 }
 
-            # 【修复2】新增 xhttp 配置加强 (核心补丁)
             elif stream.get('network') == 'xhttp':
                 xhttp = stream.get('xhttpSettings', {})
                 p['xhttp-opts'] = {
@@ -289,13 +301,11 @@ def process_json(data: str):
                 if extra:
                     p['xhttp-opts']['extra'] = extra
 
-            # gRPC 配置
             elif stream.get('network') == 'grpc':
                 p['grpc-opts'] = {
                     "grpc-service-name": stream.get('grpcSettings', {}).get('serviceName', '')
                 }
 
-            # 清理空值 (避免 Clash Meta 解析到空 flow 报错)
             p = {k: v for k, v in p.items() if v not in (None, '', {}, [])}
             
             fp = make_fingerprint(p)
@@ -328,7 +338,7 @@ def parse_server_port(srv):
 # ====================== 主程序 ======================
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    logger.info("=== ChromeGo Enhanced v3.5.1 最终修复加强版启动 ===")
+    logger.info("=== ChromeGo Enhanced v3.5.2 终极修复加强版启动 ===")
     process_file("urls/sources.txt")
     logger.info(f"最终共提取 {len(extracted_proxies)} 个唯一节点")
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
