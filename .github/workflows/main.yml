@@ -8,13 +8,18 @@ on:
         - cron: "0 0,12 * * *"
     workflow_dispatch:
 
-# 全局开启 Node.js 24，消除警告
+# 全局开启 Node.js 24
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
     Extract:
         runs-on: ubuntu-latest
+        
+        # ======== 核心修复：添加写入权限 ========
+        permissions:
+            contents: write
+        # ========================================
 
         steps:
             - name: Checkout repository
@@ -40,7 +45,6 @@ jobs:
             - name: Commit & Push changes
               env:
                   GITHUB_TOKEN: ${{ github.token }}
-              # 升级到 v5 版本以彻底匹配新环境
               uses: stefanzweifel/git-auto-commit-action@v5
               with:
                     commit_message: Auto extract by Github Actions at UTC ${{ env.DATE }}
