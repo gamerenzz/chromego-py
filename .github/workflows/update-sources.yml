@@ -1,6 +1,8 @@
 name: 更新订阅地址 sources.txt
 
 on:
+  schedule:
+    - cron: '30 23 * * *'  # 北京时间早上 7:30 (UTC 前一天 23:30)
   workflow_dispatch:
     inputs:
       run_description:
