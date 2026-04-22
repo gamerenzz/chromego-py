@@ -72,19 +72,17 @@ proxies:
     mode: auto
   name: UNK-VLESS-4
 - name: UNK-HYSTERIA-5
-  type: hysteria
   server: 2a14:7584:d097::a
   port: 54177
+  type: hysteria
+  auth_str: dongtaiwang.com
   auth-str: dongtaiwang.com
-  sni: apple.com
+  up: 11
+  down: 55
+  fast-open: false
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  up: 11
-  down: 55
-  auth_str: dongtaiwang.com
-  fast-open: false
 - name: UNK-TUIC-6
   server: ip1.758733.xyz
   port: 10088
@@ -137,37 +135,33 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- type: hysteria
-  server: 5.83.129.153
+- server: 5.83.129.153
   port: 20088
-  auth-str: dongtaiwang.com
+  type: hysteria
   auth_str: dongtaiwang.com
+  auth-str: dongtaiwang.com
   up: 100
   down: 100
-  sni: apple.com
+  fast-open: false
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  fast-open: false
   name: 🇩🇪 DE-HYSTERIA-10
-- type: hysteria
-  server: 5.83.129.90
+- server: 5.83.129.90
   port: 54177
-  auth-str: dongtaiwang.com
+  type: hysteria
   auth_str: dongtaiwang.com
+  auth-str: dongtaiwang.com
   up: 100
   down: 100
-  sni: apple.com
+  fast-open: false
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  fast-open: false
   name: 🇩🇪 DE-HYSTERIA-11
-- type: hysteria2
-  server: 157.254.223.43
+- server: 157.254.223.43
   port: 27921
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
   sni: www.bing.com
@@ -175,29 +169,29 @@ proxies:
   alpn:
   - h3
   name: 🇺🇸 US-Providence-HYSTERIA2-12
-- type: hysteria2
-  server: 2001:bc8:32d7:17b::3
+- server: 2001:bc8:32d7:17b::3
   port: 22000
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
-  sni: '[2001:bc8:32d7:17b::3]'
+  sni: www.bing.com
   skip-cert-verify: true
   alpn:
   - h3
   name: 🇫🇷 FR-HYSTERIA2-13
-- type: hysteria2
-  server: 2a10:3c80:0:f::2
+- server: 2a10:3c80:0:f::2
   port: 39463
+  type: hysteria2
   password: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   auth: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
-  sni: '[2a10:3c80:0:f::2]'
+  sni: www.bing.com
   skip-cert-verify: true
   alpn:
   - h3
   name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA2-14
-- type: hysteria2
-  server: fan.193919.xyz
+- server: fan.193919.xyz
   port: 45889
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
   sni: fan.193919.xyz
@@ -205,9 +199,9 @@ proxies:
   alpn:
   - h3
   name: UNK-HYSTERIA2-15
-- type: hysteria2
-  server: 5.83.129.153
+- server: 5.83.129.153
   port: 22222
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
   sni: bing.com
