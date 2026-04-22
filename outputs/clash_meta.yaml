@@ -6,8 +6,11 @@ ipv6: true
 dns:
   enabled: true
   nameserver:
-  - 119.29.29.29
-  - 223.5.5.5
+  - 8.8.8.8
+  - 1.1.1.1
+  fallback:
+  - https://dns.google/dns-query
+  - https://1.1.1.1/dns-query
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
 proxies:
@@ -270,5 +273,9 @@ proxy-groups:
   - DIRECT
   - 🚀 节点选择
 rules:
+- DOMAIN-KEYWORD,google,🚀 节点选择
+- DOMAIN-KEYWORD,gemini,🚀 节点选择
+- DOMAIN-SUFFIX,googleapis.com,🚀 节点选择
+- DOMAIN-SUFFIX,gstatic.com,🚀 节点选择
 - GEOIP,CN,🎯 全球直连
 - MATCH,🚀 节点选择
