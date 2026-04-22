@@ -8,7 +8,6 @@ import geoip2.database
 import os
 import hashlib
 import re
-import base64
 import socket
 from urllib.parse import urlparse, parse_qs
 
@@ -37,11 +36,6 @@ def get_location(ip: str) -> str:
         return f"{flag}{c}-{resp.city.name or ''}".strip('-')
     except: return "UNK"
 
-def format_server(addr: str) -> str:
-    addr = str(addr).strip('[]')
-    if ":" in addr and "." not in addr: return f"[{addr}]"
-    return addr
-
 def parse_bw_int(val) -> int:
     if not val: return 100
     m = re.search(r'(\d+)', str(val))
@@ -58,37 +52,41 @@ def process_clash(data: str):
         proxies = content.get('proxies', []) or content.get('proxy', [])
         for p in proxies:
             if not isinstance(p, dict) or not p.get('server'): continue
-            
+            p = dict(p)
             p_type = str(p.get('type','')).lower()
             auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
             
-            # 直接创建普通字典，Python 3.11 会自动保持这个顺序
-            new_p = {
+            # 建立对齐网友版的标准结构
+            node = {
                 "name": f"{get_location(p.get('server'))}-{p_type.upper()}-{len(extracted_proxies)+1}",
-                "server": format_server(p.get('server')),
+                "server": p.get('server').strip('[]'),
                 "port": int(p.get('port')),
                 "type": p_type
             }
             
             if p_type == 'hysteria':
-                new_p.update({
+                node.update({
                     "auth_str": auth, "auth-str": auth,
                     "up": parse_bw_int(p.get('up')), "down": parse_bw_int(p.get('down')),
                     "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
                 })
             elif p_type == 'hysteria2':
-                new_p.update({
+                node.update({
                     "password": auth, "auth": auth,
-                    "sni": p.get('sni') or 'www.bing.com',
-                    "skip-cert-verify": True, "alpn": ['h3']
+                    "skip-cert-verify": False, "alpn": ['h3'] # H2 必须开启证书校验才通
+                })
+                if p.get('sni'): node['sni'] = p.get('sni')
+            elif p_type == 'tuic':
+                node.update({
+                    "uuid": p.get('uuid'), "password": p.get('password'),
+                    "skip-cert-verify": False, "alpn": ['h3'], "udp-relay-mode": "native", "congestion-controller": "bbr"
                 })
             else:
-                for k, v in p.items():
-                    if k not in new_p: new_p[k] = v
+                node.update(p)
 
-            fp = make_fingerprint(new_p)
+            fp = make_fingerprint(node)
             if fp not in servers_list:
-                extracted_proxies.append(new_p)
+                extracted_proxies.append(node)
                 servers_list.append(fp)
     except: pass
 
@@ -105,34 +103,32 @@ def process_json(data: str):
                 if not s: continue
                 addr = str(s).split(',')[0]
                 host, port = (addr.rsplit(':', 1) if ':' in addr else (addr, 443))
+                host = host.strip('[]')
                 auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
                 
-                new_p = {
+                node = {
                     "name": f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}",
-                    "server": format_server(host),
-                    "port": int(port),
-                    "type": typ
+                    "server": host, "port": int(port), "type": typ
                 }
                 
                 if typ == "hysteria":
-                    new_p.update({
+                    node.update({
                         "auth_str": auth, "auth-str": auth,
                         "up": parse_bw_int(content.get('up')), "down": parse_bw_int(content.get('down')),
                         "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
                     })
                 else:
-                    new_p.update({
-                        "password": auth, "auth": auth,
-                        "sni": content.get('sni') or 'www.bing.com',
-                        "skip-cert-verify": True, "alpn": ['h3']
+                    node.update({
+                        "password": auth, "auth": auth, "sni": content.get('sni') or 'www.bing.com',
+                        "skip-cert-verify": False, "alpn": ['h3']
                     })
 
-                fp = make_fingerprint(new_p)
+                fp = make_fingerprint(node)
                 if fp not in servers_list:
-                    extracted_proxies.append(new_p)
+                    extracted_proxies.append(node)
                     servers_list.append(fp)
         
-        # VLESS 逻辑
+        # VLESS 逻辑对齐
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             if (ob.get('protocol') or ob.get('type') or '').lower() == 'vless':
@@ -143,30 +139,21 @@ def process_json(data: str):
                 reality = stream.get('realitySettings', {}) or stream.get('tlsSettings', {})
                 network = stream.get('network', 'tcp')
                 
-                new_p = {
+                node = {
                     "name": f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}",
-                    "server": format_server(server),
-                    "port": int(vnext.get('port', 443)),
-                    "type": "vless",
-                    "uuid": vnext.get('users', [{}])[0].get('id')
+                    "server": server, "port": int(vnext.get('port', 443)), "type": "vless",
+                    "uuid": vnext.get('users', [{}])[0].get('id'), "network": network, "tls": True,
+                    "sni": reality.get('serverName', ''), "alpn": ['h3'], "skip-cert-verify": False
                 }
-                if network == 'tcp': new_p['flow'] = vnext.get('users', [{}])[0].get('flow', '')
-                new_p.update({
-                    "network": network, "tls": True,
-                    "sni": reality.get('serverName', ''), "client-fingerprint": reality.get('fingerprint', 'chrome'), "alpn": ['h3']
-                })
-                
+                if network == 'tcp': node['flow'] = vnext.get('users', [{}])[0].get('flow', '')
                 if stream.get('security') == 'reality':
-                    new_p['reality-opts'] = {"public-key": reality.get('publicKey', ''), "short-id": reality.get('shortId', '')}
-                    new_p['skip-cert-verify'] = False
-                else:
-                    new_p['skip-cert-verify'] = True
+                    node['reality-opts'] = {"public-key": reality.get('publicKey', ''), "short-id": reality.get('shortId', '')}
                 if network == 'xhttp':
-                    new_p['xhttp-opts'] = {"path": stream.get('xhttpSettings', {}).get('path', '/'), "mode": "auto"}
+                    node['xhttp-opts'] = {"path": stream.get('xhttpSettings', {}).get('path', '/'), "mode": "auto"}
 
-                fp = make_fingerprint(new_p)
+                fp = make_fingerprint(node)
                 if fp not in servers_list:
-                    extracted_proxies.append(new_p)
+                    extracted_proxies.append(node)
                     servers_list.append(fp)
     except: pass
 
@@ -184,7 +171,11 @@ def process_file(file_path: str):
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
     process_file("urls/sources.txt")
-    # sort_keys=False 很重要，保持插入顺序。allow_unicode 保证国旗不变成乱码。
+    # 使用 default_flow_style=True 强制让每个节点输出为单行 {} 格式，完全复刻网友版
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
-        yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False)
+        f.write("proxies:\n")
+        for proxy in extracted_proxies:
+            # 每一个节点用 flow style 输出，这样既美观又解决了 IPv6 括号和排序问题
+            yaml_str = yaml.dump(proxy, allow_unicode=True, default_flow_style=True, width=float("inf"))
+            f.write(f"  - {yaml_str.strip()}\n")
     print(f"✅ 提取完成，共 {len(extracted_proxies)} 个节点")
