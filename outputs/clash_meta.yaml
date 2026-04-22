@@ -80,8 +80,8 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 11
-  down: 55
+  up: 11 Mbps
+  down: 55 Mbps
   auth_str: dongtaiwang.com
   fast-open: false
 - name: UNK-TUIC-6
@@ -147,8 +147,9 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 11
-  down: 55
+  up: 11 Mbps
+  down: 55 Mbps
+  fast-open: false
 - name: 🇩🇪 DE-HYSTERIA-11
   type: hysteria
   server: 5.83.129.90
@@ -160,8 +161,9 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 11
-  down: 55
+  up: 11 Mbps
+  down: 55 Mbps
+  fast-open: false
 - name: 🇺🇸 US-Providence-HYSTERIA2-12 (28000-29000)
   type: hysteria2
   server: 157.254.223.43
@@ -184,8 +186,9 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 100
-  down: 100
+  up: 100 Mbps
+  down: 100 Mbps
+  fast-open: false
 - name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA-14
   type: hysteria
   server: 2a10:3c80:0:f::2
@@ -197,8 +200,9 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 100
-  down: 100
+  up: 100 Mbps
+  down: 100 Mbps
+  fast-open: false
 - name: UNK-HYSTERIA-15
   type: hysteria
   server: fan.193919.xyz
@@ -210,8 +214,9 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 100
-  down: 100
+  up: 100 Mbps
+  down: 100 Mbps
+  fast-open: false
 - name: 🇩🇪 DE-HYSTERIA-16
   type: hysteria
   server: 5.83.129.153
@@ -223,5 +228,6 @@ proxies:
   alpn:
   - h3
   protocol: udp
-  up: 100
-  down: 100
+  up: 100 Mbps
+  down: 100 Mbps
+  fast-open: false
