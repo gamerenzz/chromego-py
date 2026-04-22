@@ -56,6 +56,16 @@ def make_fingerprint(p: dict) -> str:
     key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|{p.get('uuid') or p.get('password') or p.get('auth-str','')}"
     return hashlib.md5(key.lower().encode()).hexdigest()
 
+def normalize_alpn(alpn_val):
+    """确保 alpn 是列表格式"""
+    if alpn_val is None:
+        return ['h3']
+    if isinstance(alpn_val, str):
+        return [alpn_val]
+    if isinstance(alpn_val, list):
+        return alpn_val
+    return ['h3']
+
 # ====================== 核心解析逻辑 ======================
 def process_clash(data: str):
     try:
@@ -66,7 +76,7 @@ def process_clash(data: str):
             p = dict(p)
             p_type = str(p.get('type','')).lower()
             
-            # 认证信息 URL 编码 (解决特殊字符导致不通的关键)
+            # 认证信息 URL 编码
             raw_auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or p.get('auth') or ''
             encoded_auth = urllib.parse.quote(raw_auth, safe='')
 
@@ -76,21 +86,20 @@ def process_clash(data: str):
             node["type"] = p_type
             
             if p_type == 'hysteria':
-                # 修复：移除 fast-open 和 protocol 字段，保留核心参数
                 node.update({
                     "auth_str": encoded_auth,
                     "auth-str": encoded_auth,
                     "up": p.get('up', 100),
                     "down": p.get('down', 100),
                     "skip-cert-verify": p.get('skip-cert-verify', True),
-                    "alpn": p.get('alpn', ['h3'])
+                    "alpn": normalize_alpn(p.get('alpn', 'h3'))
                 })
             elif p_type == 'hysteria2':
                 node.update({
                     "password": encoded_auth,
                     "auth": encoded_auth,
-                    "skip-cert-verify": p.get('skip-cert-verify', True),   # 继承原值，默认 True
-                    "alpn": p.get('alpn', ['h3']),
+                    "skip-cert-verify": p.get('skip-cert-verify', True),
+                    "alpn": normalize_alpn(p.get('alpn', 'h3')),
                     "sni": p.get('sni', 'www.bing.com')
                 })
                 if p.get('ports'): node['ports'] = p.get('ports')
@@ -99,14 +108,17 @@ def process_clash(data: str):
                     "uuid": p.get('uuid'),
                     "password": encoded_auth,
                     "skip-cert-verify": p.get('skip-cert-verify', False),
-                    "alpn": p.get('alpn', ['h3']),
+                    "alpn": normalize_alpn(p.get('alpn', 'h3')),
                     "udp-relay-mode": p.get('udp-relay-mode', 'native'),
                     "congestion-controller": p.get('congestion-controller', 'bbr')
                 })
             else:
-                # vless, vmess, trojan 等直接复制原字段
+                # vless, vmess, trojan 等直接复制原字段，但也要处理 alpn 格式
                 for k, v in p.items():
-                    if k not in node: node[k] = v
+                    if k == 'alpn':
+                        v = normalize_alpn(v)
+                    if k not in node:
+                        node[k] = v
 
             fp = make_fingerprint(node)
             if fp not in servers_list:
@@ -126,7 +138,6 @@ def process_json(data: str):
             
             for s in servers:
                 if not s: continue
-                # 识别端口跳跃 (例如: server: port,range)
                 main_addr = str(s).split(',')[0]
                 ports_hopping = str(s).split(',')[1] if ',' in str(s) else None
                 host, port = (main_addr.rsplit(':', 1) if ':' in main_addr else (main_addr, 443))
@@ -140,14 +151,13 @@ def process_json(data: str):
                 node["type"] = typ
                 
                 if typ == "hysteria":
-                    # 修复：移除 fast-open 和 protocol
                     node.update({
                         "auth_str": encoded_auth,
                         "auth-str": encoded_auth,
                         "up": content.get('up', 100),
                         "down": content.get('down', 100),
                         "skip-cert-verify": content.get('skip-cert-verify', True),
-                        "alpn": content.get('alpn', ['h3'])
+                        "alpn": normalize_alpn(content.get('alpn', 'h3'))
                     })
                 else:  # hysteria2
                     node.update({
@@ -155,7 +165,7 @@ def process_json(data: str):
                         "auth": encoded_auth,
                         "sni": content.get('sni', 'www.bing.com'),
                         "skip-cert-verify": content.get('skip-cert-verify', True),
-                        "alpn": content.get('alpn', ['h3'])
+                        "alpn": normalize_alpn(content.get('alpn', 'h3'))
                     })
                     if ports_hopping: node['ports'] = ports_hopping
 
@@ -164,7 +174,7 @@ def process_json(data: str):
                     extracted_proxies.append(node)
                     servers_list.append(fp)
         
-        # VLESS 解析逻辑（保持不变）
+        # VLESS 解析逻辑（保持不变，但 alpn 通常已经是列表）
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             if (ob.get('protocol') or ob.get('type') or '').lower() == 'vless':
@@ -183,7 +193,7 @@ def process_json(data: str):
                     "network": network,
                     "tls": True,
                     "sni": reality.get('serverName', 'www.bing.com'),
-                    "alpn": ['h3'],
+                    "alpn": normalize_alpn(['h3']),  # vless 通常固定为 h3
                     "skip-cert-verify": False
                 })
                 if network == 'tcp':
@@ -213,7 +223,6 @@ def process_file(file_path: str):
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=20) as resp:
                 raw = resp.read().decode('utf-8', errors='ignore')
-            # 根据内容格式选择解析器
             if 'proxies:' in raw or 'proxy:' in raw:
                 process_clash(raw)
             else:
@@ -223,11 +232,10 @@ def process_file(file_path: str):
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    # 请确保存在 urls/sources.txt 文件，每行一个订阅链接
     process_file("urls/sources.txt")
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         f.write("proxies:\n")
         for proxy in extracted_proxies:
             yaml_str = yaml.dump(proxy, Dumper=PureDumper, allow_unicode=True, sort_keys=False, width=float("inf"))
             f.write(f"  - {yaml_str.strip()}\n")
-    print(f"✅ 修复完成，共 {len(extracted_proxies)} 个节点")
+    print(f"✅ 最终修复完成，共 {len(extracted_proxies)} 个节点")
