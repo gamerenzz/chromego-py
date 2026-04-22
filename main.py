@@ -10,16 +10,7 @@ import hashlib
 import re
 import base64
 import socket
-from collections import OrderedDict
 from urllib.parse import urlparse, parse_qs
-
-# ==================== YAML 格式补丁 (解决 !!python/object 问题的核心) ====================
-def dict_representer(dumper, data):
-    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
-
-# 注册补丁：强制让 PyYAML 把所有字典（包括 OrderedDict）都转为纯净映射
-yaml.add_representer(OrderedDict, dict_representer)
-yaml.add_representer(dict, dict_representer)
 
 # ==================== 全局设置 ====================
 socket.setdefaulttimeout(15)
@@ -71,13 +62,13 @@ def process_clash(data: str):
             p_type = str(p.get('type','')).lower()
             auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
             
-            # 使用 OrderedDict 严格控制输出顺序，配合补丁输出纯净 YAML
-            new_p = OrderedDict()
-            loc = get_location(p.get('server'))
-            new_p['name'] = f"{loc}-{p_type.upper()}-{len(extracted_proxies)+1}"
-            new_p['server'] = format_server(p.get('server'))
-            new_p['port'] = int(p.get('port'))
-            new_p['type'] = p_type
+            # 直接创建普通字典，Python 3.11 会自动保持这个顺序
+            new_p = {
+                "name": f"{get_location(p.get('server'))}-{p_type.upper()}-{len(extracted_proxies)+1}",
+                "server": format_server(p.get('server')),
+                "port": int(p.get('port')),
+                "type": p_type
+            }
             
             if p_type == 'hysteria':
                 new_p.update({
@@ -116,11 +107,12 @@ def process_json(data: str):
                 host, port = (addr.rsplit(':', 1) if ':' in addr else (addr, 443))
                 auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
                 
-                new_p = OrderedDict()
-                new_p['name'] = f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}"
-                new_p['server'] = format_server(host)
-                new_p['port'] = int(port)
-                new_p['type'] = typ
+                new_p = {
+                    "name": f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}",
+                    "server": format_server(host),
+                    "port": int(port),
+                    "type": typ
+                }
                 
                 if typ == "hysteria":
                     new_p.update({
@@ -151,18 +143,18 @@ def process_json(data: str):
                 reality = stream.get('realitySettings', {}) or stream.get('tlsSettings', {})
                 network = stream.get('network', 'tcp')
                 
-                new_p = OrderedDict()
-                new_p['name'] = f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}"
-                new_p['server'] = format_server(server)
-                new_p['port'] = int(vnext.get('port', 443))
-                new_p['type'] = "vless"
-                new_p['uuid'] = vnext.get('users', [{}])[0].get('id')
+                new_p = {
+                    "name": f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}",
+                    "server": format_server(server),
+                    "port": int(vnext.get('port', 443)),
+                    "type": "vless",
+                    "uuid": vnext.get('users', [{}])[0].get('id')
+                }
                 if network == 'tcp': new_p['flow'] = vnext.get('users', [{}])[0].get('flow', '')
-                new_p['network'] = network
-                new_p['tls'] = True
-                new_p['sni'] = reality.get('serverName', '')
-                new_p['client-fingerprint'] = reality.get('fingerprint', 'chrome')
-                new_p['alpn'] = ['h3']
+                new_p.update({
+                    "network": network, "tls": True,
+                    "sni": reality.get('serverName', ''), "client-fingerprint": reality.get('fingerprint', 'chrome'), "alpn": ['h3']
+                })
                 
                 if stream.get('security') == 'reality':
                     new_p['reality-opts'] = {"public-key": reality.get('publicKey', ''), "short-id": reality.get('shortId', '')}
@@ -192,7 +184,7 @@ def process_file(file_path: str):
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
     process_file("urls/sources.txt")
-    # 最终输出，由于注册了 representer 补丁，OrderedDict 会输出为纯净的键值对
+    # sort_keys=False 很重要，保持插入顺序。allow_unicode 保证国旗不变成乱码。
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False)
     print(f"✅ 提取完成，共 {len(extracted_proxies)} 个节点")
