@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-ChromeGo Enhanced v3.6.1 - 修复版
-- 修复：'alpn' is not a slice 报错（强制将 alpn 转换为列表格式）
+ChromeGo Enhanced v3.6.2 - 最终稳定版
+- 修复：loop is detected 报错（删除了策略组间的循环引用）
+- 修复：'alpn' is not a slice 报错（强制转换 alpn 为列表）
 - 修复：DNS 自动解析与国旗命名
-- 修复：VLESS xhttp/Reality/WS 完整提取
 """
 import yaml
 import json
@@ -57,7 +57,7 @@ def make_fingerprint(p: dict) -> str:
     return hashlib.md5(key.lower().encode()).hexdigest()
 
 def ensure_alpn_list(alpn):
-    """确保 ALPN 始终是列表格式，修复 'is not a slice' 报错"""
+    """强制转换 ALPN 为列表，解决 'is not a slice' 报错"""
     if not alpn: return ["h3"]
     if isinstance(alpn, str): return [alpn]
     if isinstance(alpn, list): return alpn
@@ -82,7 +82,6 @@ def parse_vless_link(link: str) -> dict | None:
         params = parse_qs(url.query)
         server = url.hostname
         loc = get_location(server)
-        
         p = {
             "name": f"{loc}-VLESS-{len(extracted_proxies)+1}",
             "type": "vless",
@@ -94,7 +93,7 @@ def parse_vless_link(link: str) -> dict | None:
             "sni": params.get('sni', [''])[0] or params.get('serverName', [''])[0],
             "flow": params.get('flow', [''])[0],
             "client-fingerprint": params.get('fp', ['chrome'])[0],
-            "alpn": ensure_alpn_list(params.get('alpn', ["h3"]))
+            "alpn": ensure_alpn_list(params.get('alpn'))
         }
         if params.get('security', [''])[0] == 'reality':
             p['reality-opts'] = {"public-key": params.get('pbk', [''])[0], "short-id": params.get('sid', [''])[0]}
@@ -108,9 +107,7 @@ def process_clash(data: str):
         for p in proxies:
             if not isinstance(p, dict) or not p.get('server'): continue
             p = dict(p)
-            # 修复已存在的 Clash 节点中的 ALPN
             if 'alpn' in p: p['alpn'] = ensure_alpn_list(p['alpn'])
-            
             fp = make_fingerprint(p)
             if fp in servers_list: continue
             loc = get_location(p.get('server'))
@@ -126,7 +123,6 @@ def process_json(data: str):
             servers = content.get('server') or content.get('servers', [])
             if isinstance(servers, str): servers = [servers]
             typ = "hysteria2" if any(',' in str(s) for s in servers) or "hysteria2" in str(content).lower() else "hysteria"
-            
             for s in servers:
                 server, main_port, ports_range = parse_server_port(s)
                 tls_cfg = content.get('tls', {})
@@ -139,7 +135,7 @@ def process_json(data: str):
                     "password": content.get('auth') or content.get('password') or content.get('auth_str', ''),
                     "sni": content.get('sni') or content.get('peer') or tls_cfg.get('sni', ''),
                     "skip-cert-verify": content.get('insecure', tls_cfg.get('insecure', True)),
-                    "alpn": ensure_alpn_list(content.get('alpn')) # ✅ 核心修复点
+                    "alpn": ensure_alpn_list(content.get('alpn'))
                 }
                 if typ == "hysteria":
                     p["auth-str"] = p["password"]
@@ -151,7 +147,6 @@ def process_json(data: str):
                     extracted_proxies.append(p)
                     servers_list.append(fp)
 
-        # 处理 Outbounds
         for ob in content.get('outbounds', []):
             if (ob.get('protocol') or ob.get('type','')).lower() != 'vless': continue
             vnext = ob.get('settings', {}).get('vnext', [{}])[0]
@@ -169,14 +164,13 @@ def process_json(data: str):
                 "network": stream.get('network', 'tcp'),
                 "tls": stream.get('security') in ('tls', 'reality'),
                 "sni": reality.get('serverName') or stream.get('serverName', ''),
-                "alpn": ensure_alpn_list(reality.get('alpn') or stream.get('alpn')) # ✅ 核心修复点
+                "alpn": ensure_alpn_list(reality.get('alpn') or stream.get('alpn'))
             }
             if stream.get('security') == 'reality':
                 p['reality-opts'] = {"public-key": reality.get('publicKey'), "short-id": reality.get('shortId')}
             if stream.get('network') == 'xhttp':
                 xh = stream.get('xhttpSettings', {})
                 p['xhttp-opts'] = {"path": xh.get('path', '/'), "mode": xh.get('mode', 'auto')}
-            
             p = {k: v for k, v in p.items() if v not in (None, '', {}, [])}
             if make_fingerprint(p) not in servers_list:
                 extracted_proxies.append(p)
@@ -226,17 +220,38 @@ if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
     process_file("urls/sources.txt")
     node_names = [p['name'] for p in extracted_proxies]
+    
+    # ======== 核心修复：消除策略组回环引用 ========
     clash_config = {
         "mixed-port": 7890, "allow-lan": True, "mode": "rule", "log-level": "info", "ipv6": True,
         "dns": {"enabled": True, "nameserver": ["119.29.29.29", "223.5.5.5"], "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16"},
         "proxies": extracted_proxies,
         "proxy-groups": [
-            {"name": "🚀 节点选择", "type": "select", "proxies": ["♻️ 自动选择", "🎯 全球直连"] + node_names},
-            {"name": "♻️ 自动选择", "type": "url-test", "url": "http://www.gstatic.com/generate_204", "interval": 300, "proxies": node_names},
-            {"name": "🎯 全球直连", "type": "select", "proxies": ["DIRECT", "🚀 节点选择"]}
+            {
+                "name": "🚀 节点选择", 
+                "type": "select", 
+                "proxies": ["♻️ 自动选择", "DIRECT"] + node_names # 👈 删除了 "🎯 全球直连"，打破循环
+            },
+            {
+                "name": "♻️ 自动选择", 
+                "type": "url-test", 
+                "url": "http://www.gstatic.com/generate_204", 
+                "interval": 300, 
+                "proxies": node_names
+            },
+            {
+                "name": "🎯 全球直连", 
+                "type": "select", 
+                "proxies": ["DIRECT", "🚀 节点选择"] # 👈 保留这个，允许规则分流切换回代理
+            }
         ],
-        "rules": ["GEOIP,CN,🎯 全球直连", "MATCH,🚀 节点选择"]
+        "rules": [
+            "GEOIP,CN,🎯 全球直连", 
+            "MATCH,🚀 节点选择"
+        ]
     }
+    # ============================================
+
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump(clash_config, f, allow_unicode=True, sort_keys=False)
     print(f"✅ 处理完成，共 {len(extracted_proxies)} 个节点。")
