@@ -9,6 +9,10 @@ on:
         default: '手动更新四个 sources.txt 文件'
         type: string
 
+# 全局开启 Node.js 24，消除警告
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   update-sources:
     runs-on: ubuntu-latest
