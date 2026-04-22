@@ -9,15 +9,14 @@ import os
 import hashlib
 import re
 import socket
+import urllib.parse
 from urllib.parse import urlparse, parse_qs
 
-# ==================== YAML 渲染器极致修正 (解决排序问题) ====================
+# ==================== YAML 渲染器极致修正 ====================
 class PureDumper(yaml.SafeDumper):
     def represent_mapping(self, tag, mapping, flow_style=None):
-        # 强制不排序，保持代码中的插入顺序
         return super(PureDumper, self).represent_mapping(tag, mapping, flow_style=flow_style)
 
-# 强制所有字典在输出时使用单行流式格式，且不排序
 def dict_representer(dumper, data):
     return dumper.represent_mapping('tag:yaml.org,2002:map', data.items(), flow_style=True)
 
@@ -48,6 +47,11 @@ def get_location(ip: str) -> str:
         return f"{flag}{c}-{resp.city.name or ''}".strip('-')
     except: return "UNK"
 
+def parse_bw_int(val) -> int:
+    if not val: return 100
+    m = re.search(r'(\d+)', str(val))
+    return int(m.group(1)) if m else 100
+
 def make_fingerprint(p: dict) -> str:
     key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|{p.get('uuid') or p.get('password') or p.get('auth-str','')}"
     return hashlib.md5(key.lower().encode()).hexdigest()
@@ -61,9 +65,11 @@ def process_clash(data: str):
             if not isinstance(p, dict) or not p.get('server'): continue
             p = dict(p)
             p_type = str(p.get('type','')).lower()
-            auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
             
-            # 【核心对齐】严格按照网友通畅版的字段顺序和内容
+            # 认证信息 URL 编码 (解决特殊字符导致不通的关键)
+            raw_auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or p.get('auth') or ''
+            encoded_auth = urllib.parse.quote(raw_auth, safe='')
+
             node = {"name": f"{get_location(p.get('server'))}-{p_type.upper()}-{len(extracted_proxies)+1}"}
             node["server"] = p.get('server').strip('[]')
             node["port"] = int(p.get('port'))
@@ -71,18 +77,20 @@ def process_clash(data: str):
             
             if p_type == 'hysteria':
                 node.update({
-                    "auth_str": auth, "auth-str": auth,
-                    "up": 100, "down": 100, # 对齐网友，强制 100 以提高成功率
-                    "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
+                    "auth_str": encoded_auth, "auth-str": encoded_auth,
+                    "up": 100, "down": 100, "fast-open": False,
+                    "protocol": "udp", "skip-cert-verify": True, "alpn": ['h3']
                 })
             elif p_type == 'hysteria2':
                 node.update({
-                    "password": auth, "auth": auth, "sni": p.get('sni', 'www.bing.com'),
-                    "skip-cert-verify": False, "alpn": ['h3']
+                    "password": encoded_auth, "auth": encoded_auth,
+                    "skip-cert-verify": False, "alpn": ['h3'],
+                    "sni": p.get('sni', 'www.bing.com')
                 })
+                if p.get('ports'): node['ports'] = p.get('ports')
             elif p_type == 'tuic':
                 node.update({
-                    "uuid": p.get('uuid'), "password": auth,
+                    "uuid": p.get('uuid'), "password": encoded_auth,
                     "skip-cert-verify": False, "alpn": ['h3'], "udp-relay-mode": "native", "congestion-controller": "bbr"
                 })
             else:
@@ -106,10 +114,14 @@ def process_json(data: str):
             
             for s in servers:
                 if not s: continue
-                addr = str(s).split(',')[0]
-                host, port = (addr.rsplit(':', 1) if ':' in addr else (addr, 443))
-                auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
+                # 识别端口跳跃 (例如: server: port,range)
+                main_addr = str(s).split(',')[0]
+                ports_hopping = str(s).split(',')[1] if ',' in str(s) else None
+                host, port = (main_addr.rsplit(':', 1) if ':' in main_addr else (main_addr, 443))
                 
+                raw_auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
+                encoded_auth = urllib.parse.quote(raw_auth, safe='')
+
                 node = {"name": f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}"}
                 node["server"] = host.strip('[]')
                 node["port"] = int(port)
@@ -117,21 +129,24 @@ def process_json(data: str):
                 
                 if typ == "hysteria":
                     node.update({
-                        "auth_str": auth, "auth-str": auth,
-                        "up": 100, "down": 100, "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
+                        "auth_str": encoded_auth, "auth-str": encoded_auth,
+                        "up": 100, "down": 100, "fast-open": False,
+                        "protocol": "udp", "skip-cert-verify": True, "alpn": ['h3']
                     })
                 else:
                     node.update({
-                        "password": auth, "auth": auth, "sni": content.get('sni') or 'www.bing.com',
+                        "password": encoded_auth, "auth": encoded_auth,
+                        "sni": content.get('sni') or 'www.bing.com',
                         "skip-cert-verify": False, "alpn": ['h3']
                     })
+                    if ports_hopping: node['ports'] = ports_hopping
 
                 fp = make_fingerprint(node)
                 if fp not in servers_list:
                     extracted_proxies.append(node)
                     servers_list.append(fp)
         
-        # VLESS 逻辑排序对齐
+        # VLESS 逻辑完全保持
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             if (ob.get('protocol') or ob.get('type') or '').lower() == 'vless':
@@ -141,7 +156,6 @@ def process_json(data: str):
                 stream = ob.get('streamSettings', {})
                 reality = stream.get('realitySettings', {}) or stream.get('tlsSettings', {})
                 network = stream.get('network', 'tcp')
-                
                 node = {"name": f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}"}
                 node.update({
                     "server": server, "port": int(vnext.get('port', 443)), "type": "vless",
@@ -153,7 +167,6 @@ def process_json(data: str):
                     node['reality-opts'] = {"public-key": reality.get('publicKey', ''), "short-id": reality.get('shortId', '')}
                 if network == 'xhttp':
                     node['xhttp-opts'] = {"path": stream.get('xhttpSettings', {}).get('path', '/'), "mode": "auto"}
-
                 fp = make_fingerprint(node)
                 if fp not in servers_list:
                     extracted_proxies.append(node)
@@ -177,7 +190,6 @@ if __name__ == "__main__":
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         f.write("proxies:\n")
         for proxy in extracted_proxies:
-            # 使用 Dumper=PureDumper 强制执行我们自定义的“不排序、单行、name 领先”逻辑
             yaml_str = yaml.dump(proxy, Dumper=PureDumper, allow_unicode=True, sort_keys=False, width=float("inf"))
             f.write(f"  - {yaml_str.strip()}\n")
-    print(f"✅ 提取完成，共 {len(extracted_proxies)} 个节点")
+    print(f"✅ 终极修复完成，共 {len(extracted_proxies)} 个节点")
