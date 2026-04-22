@@ -18,6 +18,10 @@ env:
 jobs:
   update-sources:
     runs-on: ubuntu-latest
+    
+    # ⚠️ 核心修复：赋予当前脚本推送代码的写权限
+    permissions:
+      contents: write
 
     steps:
       - name: 检出仓库代码
@@ -50,7 +54,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "✅ 四个文件均无变化，无需提交"
           else
-            git commit -m "chore: 更新四个 sources.txt 文件 (手动触发)"
+            git commit -m "🔄 更新订阅源 sources.txt 文件 $(date '+%Y-%m-%d %H:%M:%S')"
             git push origin main
             echo "✅ 已提交并推送 4 个文件"
           fi
