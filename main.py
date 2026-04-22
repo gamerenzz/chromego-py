@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
-"""
-ChromeGo Enhanced v3.6.0 - 极致对齐版
-- 移除 OrderedDict 解决 !!python/object 序列化错误
-- 强制 name 字段排在首位
-- Hysteria 1 彻底移除 sni 字段（对齐网友版）
-- 修复 IPv6 地址的中括号包裹逻辑
-"""
 import yaml
 import json
 import urllib.request
@@ -17,7 +10,16 @@ import hashlib
 import re
 import base64
 import socket
+from collections import OrderedDict
 from urllib.parse import urlparse, parse_qs
+
+# ==================== YAML 格式补丁 (解决 !!python/object 问题的核心) ====================
+def dict_representer(dumper, data):
+    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+
+# 注册补丁：强制让 PyYAML 把所有字典（包括 OrderedDict）都转为纯净映射
+yaml.add_representer(OrderedDict, dict_representer)
+yaml.add_representer(dict, dict_representer)
 
 # ==================== 全局设置 ====================
 socket.setdefaulttimeout(15)
@@ -28,10 +30,8 @@ servers_list: list[str] = []
 extracted_proxies: list[dict] = []
 
 geo_reader = None
-try:
-    geo_reader = geoip2.database.Reader('GeoLite2-City.mmdb')
-except:
-    logger.warning("GeoLite2-City.mmdb 未找到")
+try: geo_reader = geoip2.database.Reader('GeoLite2-City.mmdb')
+except: logger.warning("GeoLite2-City.mmdb 未找到")
 
 def get_flag(code: str) -> str:
     if not code or len(code) != 2 or code == "UNK": return ""
@@ -47,10 +47,8 @@ def get_location(ip: str) -> str:
     except: return "UNK"
 
 def format_server(addr: str) -> str:
-    """确保 IPv6 带有中括号"""
     addr = str(addr).strip('[]')
-    if ":" in addr and "." not in addr:
-        return f"[{addr}]"
+    if ":" in addr and "." not in addr: return f"[{addr}]"
     return addr
 
 def parse_bw_int(val) -> int:
@@ -70,38 +68,30 @@ def process_clash(data: str):
         for p in proxies:
             if not isinstance(p, dict) or not p.get('server'): continue
             
-            # 使用顺序插入来确保 name 在最前
-            new_p = {}
-            loc = get_location(p.get('server'))
-            node_type = p.get('type', 'unk').upper()
+            p_type = str(p.get('type','')).lower()
+            auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
             
-            new_p['name'] = f"{loc}-{node_type}-{len(extracted_proxies)+1}"
-            new_p['type'] = p.get('type')
+            # 使用 OrderedDict 严格控制输出顺序，配合补丁输出纯净 YAML
+            new_p = OrderedDict()
+            loc = get_location(p.get('server'))
+            new_p['name'] = f"{loc}-{p_type.upper()}-{len(extracted_proxies)+1}"
             new_p['server'] = format_server(p.get('server'))
             new_p['port'] = int(p.get('port'))
+            new_p['type'] = p_type
             
-            auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
-
-            if new_p['type'] == 'hysteria':
+            if p_type == 'hysteria':
                 new_p.update({
-                    "auth_str": auth,
-                    "auth-str": auth,
-                    "up": parse_bw_int(p.get('up')),
-                    "down": parse_bw_int(p.get('down')),
-                    "fast-open": False,
-                    "skip-cert-verify": True,
-                    "alpn": ["h3"]
+                    "auth_str": auth, "auth-str": auth,
+                    "up": parse_bw_int(p.get('up')), "down": parse_bw_int(p.get('down')),
+                    "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
                 })
-            elif new_p['type'] == 'hysteria2':
+            elif p_type == 'hysteria2':
                 new_p.update({
-                    "password": auth,
-                    "auth": auth,
+                    "password": auth, "auth": auth,
                     "sni": p.get('sni') or 'www.bing.com',
-                    "skip-cert-verify": True,
-                    "alpn": ["h3"]
+                    "skip-cert-verify": True, "alpn": ['h3']
                 })
             else:
-                # 填充其他字段
                 for k, v in p.items():
                     if k not in new_p: new_p[k] = v
 
@@ -126,23 +116,23 @@ def process_json(data: str):
                 host, port = (addr.rsplit(':', 1) if ':' in addr else (addr, 443))
                 auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
                 
-                new_p = {}
+                new_p = OrderedDict()
                 new_p['name'] = f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}"
-                new_p['type'] = typ
                 new_p['server'] = format_server(host)
                 new_p['port'] = int(port)
+                new_p['type'] = typ
                 
                 if typ == "hysteria":
                     new_p.update({
                         "auth_str": auth, "auth-str": auth,
                         "up": parse_bw_int(content.get('up')), "down": parse_bw_int(content.get('down')),
-                        "fast-open": False, "skip-cert-verify": True, "alpn": ["h3"]
+                        "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
                     })
                 else:
                     new_p.update({
                         "password": auth, "auth": auth,
                         "sni": content.get('sni') or 'www.bing.com',
-                        "skip-cert-verify": True, "alpn": ["h3"]
+                        "skip-cert-verify": True, "alpn": ['h3']
                     })
 
                 fp = make_fingerprint(new_p)
@@ -150,7 +140,7 @@ def process_json(data: str):
                     extracted_proxies.append(new_p)
                     servers_list.append(fp)
         
-        # VLESS 逻辑对齐
+        # VLESS 逻辑
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             if (ob.get('protocol') or ob.get('type') or '').lower() == 'vless':
@@ -161,11 +151,11 @@ def process_json(data: str):
                 reality = stream.get('realitySettings', {}) or stream.get('tlsSettings', {})
                 network = stream.get('network', 'tcp')
                 
-                new_p = {}
+                new_p = OrderedDict()
                 new_p['name'] = f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}"
-                new_p['type'] = "vless"
                 new_p['server'] = format_server(server)
                 new_p['port'] = int(vnext.get('port', 443))
+                new_p['type'] = "vless"
                 new_p['uuid'] = vnext.get('users', [{}])[0].get('id')
                 if network == 'tcp': new_p['flow'] = vnext.get('users', [{}])[0].get('flow', '')
                 new_p['network'] = network
@@ -179,7 +169,6 @@ def process_json(data: str):
                     new_p['skip-cert-verify'] = False
                 else:
                     new_p['skip-cert-verify'] = True
-
                 if network == 'xhttp':
                     new_p['xhttp-opts'] = {"path": stream.get('xhttpSettings', {}).get('path', '/'), "mode": "auto"}
 
@@ -203,7 +192,7 @@ def process_file(file_path: str):
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
     process_file("urls/sources.txt")
-    # sort_keys=False 必须保留，这样 name 才会排在第一位
+    # 最终输出，由于注册了 representer 补丁，OrderedDict 会输出为纯净的键值对
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump({"proxies": extracted_proxies}, f, allow_unicode=True, sort_keys=False)
-    print(f"✅ 完成，提取节点: {len(extracted_proxies)}")
+    print(f"✅ 提取完成，共 {len(extracted_proxies)} 个节点")
