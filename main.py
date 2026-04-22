@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-ChromeGo Enhanced v3.5.2 - 纯 Y 系列版（终极修复版）
-- 修复 Hysteria up/down 包含字符串 (Mbps) 导致内核解析报错、节点不通的问题
-- 增加 Hysteria 1/2 认证字段双重别名兼容 (auth_str/auth-str, password/auth)
-- 增加节点名称自动附加国家 Emoji 图标
+ChromeGo Enhanced v3.5.3 - 终极除错版
+- 强制添加 fast-open: false 解决 Hysteria1 假死/不通问题
+- 强制带宽格式化为 "XX Mbps" 字符串，解决内核整数解析为 Bytes/s 导致的速度为 0 的问题
 """
 import yaml
 import json
@@ -56,12 +55,12 @@ def get_location(ip: str) -> str:
     except:
         return "UNK"
 
-def parse_bw(val) -> int:
-    """提取带宽值为纯整数，防止 '11 Mbps' 字符串导致内核罢工"""
+def parse_bw(val) -> str:
+    """【核心修复】强制格式化为 Mbps 字符串，防止内核按 Bytes/s 解析导致假死"""
     if not val:
-        return 100
+        return "100 Mbps"
     m = re.search(r'(\d+)', str(val))
-    return int(m.group(1)) if m else 100
+    return f"{m.group(1)} Mbps" if m else "100 Mbps"
 
 def make_fingerprint(p: dict) -> str:
     key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|" \
@@ -147,17 +146,17 @@ def process_clash(data: str):
                 continue
             p = dict(p)
             
-            # 【修复1】严格转换带宽为整数，防 "11 Mbps" 罢工
+            # 【核心修复1】带宽严格转为字符串
             if 'up' in p: p['up'] = parse_bw(p['up'])
             if 'down' in p: p['down'] = parse_bw(p['down'])
 
-            # 【修复2】双重别名保底，适应所有 Meta 版本
             if p.get('type') == 'hysteria':
                 auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
                 p['auth-str'] = auth
                 p['auth_str'] = auth
                 if 'password' in p: del p['password']
-                p['fast-open'] = p.get('fast-open', False)
+                # 【核心修复2】强制关闭 fast-open 解决网络丢包假死
+                p['fast-open'] = False
             elif p.get('type') == 'hysteria2':
                 auth = p.get('password') or p.get('auth') or ''
                 p['password'] = auth
@@ -186,7 +185,6 @@ def process_json(data: str):
     try:
         content = json.loads(data)
         
-        # 原有 hysteria 处理
         if 'server' in content or 'servers' in content:
             servers = content.get('server') or content.get('servers', [])
             if isinstance(servers, str):
@@ -215,13 +213,14 @@ def process_json(data: str):
                         "server": server,
                         "port": main_port,
                         "auth-str": auth,
-                        "auth_str": auth,   # 增加兼容别名
+                        "auth_str": auth,
                         "sni": sni_val,
                         "skip-cert-verify": content.get('insecure', tls_cfg.get('insecure', True)),
                         "alpn": alpn,
                         "protocol": content.get('protocol', 'udp'),
                         "up": parse_bw(content.get('up_mbps') or content.get('upmbps') or content.get('up')),
                         "down": parse_bw(content.get('down_mbps') or content.get('downmbps') or content.get('down')),
+                        "fast-open": False  # 【核心修复2】强制关闭 fast-open
                     }
                 else:
                     auth = content.get('auth') or content.get('password', content.get('auth_str', ''))
@@ -231,7 +230,7 @@ def process_json(data: str):
                         "server": server,
                         "port": main_port,
                         "password": auth,
-                        "auth": auth,       # 增加兼容别名
+                        "auth": auth,
                         "sni": sni_val,
                         "skip-cert-verify": content.get('insecure', tls_cfg.get('insecure', True)),
                         "alpn": content.get('alpn', ["h3"]),
@@ -245,7 +244,7 @@ def process_json(data: str):
                     extracted_proxies.append(p)
                     servers_list.append(fp)
 
-        # vless 加强处理
+        # vless 加强处理保持不变...
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             proto = (ob.get('protocol') or ob.get('type') or '').lower()
@@ -335,10 +334,9 @@ def parse_server_port(srv):
             return parts[0], int(parts[1]), ports_range
     return srv, 443, ports_range
 
-# ====================== 主程序 ======================
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    logger.info("=== ChromeGo Enhanced v3.5.2 终极修复加强版启动 ===")
+    logger.info("=== ChromeGo Enhanced v3.5.3 终极除错版启动 ===")
     process_file("urls/sources.txt")
     logger.info(f"最终共提取 {len(extracted_proxies)} 个唯一节点")
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
