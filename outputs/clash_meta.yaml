@@ -6,6 +6,7 @@ proxies:
   flow: xtls-rprx-vision
   network: xhttp
   tls: true
+  udp: true
   sni: www.cloudflare.com
   client-fingerprint: chrome
   alpn:
@@ -13,6 +14,7 @@ proxies:
   reality-opts:
     public-key: z1_FVLAxN66t1373faq2D-BV8B7CyILrwc0vMiYw9Cc
     short-id: d3c7911a
+  skip-cert-verify: false
   xhttp-opts:
     path: /tvFTD707
     mode: auto
@@ -24,6 +26,7 @@ proxies:
   flow: xtls-rprx-vision
   network: xhttp
   tls: true
+  udp: true
   sni: apple.com
   client-fingerprint: chrome
   alpn:
@@ -31,6 +34,7 @@ proxies:
   reality-opts:
     public-key: kfw5DgkyKiovC3dzb-o2PUYnZPnbYvbx2IwERUv9czY
     short-id: 225e2cc8
+  skip-cert-verify: false
   xhttp-opts:
     path: 5cfc52bc-e701-4160-89df-930a0c040576-xh
     mode: auto
@@ -42,6 +46,7 @@ proxies:
   flow: xtls-rprx-vision
   network: xhttp
   tls: true
+  udp: true
   sni: www.microsoft.com
   client-fingerprint: chrome
   alpn:
@@ -49,6 +54,7 @@ proxies:
   reality-opts:
     public-key: njrfRguP2WJFUtBH11bJTaIEfGIb28V7_Sahlhbldyw
     short-id: 54ffd503
+  skip-cert-verify: false
   xhttp-opts:
     path: /S6wHAExO
     mode: auto
@@ -59,6 +65,7 @@ proxies:
   uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
   network: xhttp
   tls: true
+  udp: true
   sni: toarumajutsunoindex.fandom.com
   client-fingerprint: chrome
   alpn:
@@ -66,6 +73,7 @@ proxies:
   reality-opts:
     public-key: 3HaD5Ztk3X4gi3aJLVesV6KSJTW2YGG-hvGD3ZumJkE
     short-id: fa789b2f5ff56959
+  skip-cert-verify: false
   xhttp-opts:
     path: /alvin9999.com
     mode: auto
@@ -82,6 +90,7 @@ proxies:
   protocol: udp
   up: 11
   down: 55
+  udp: true
   auth_str: dongtaiwang.com
   up-mbps: 11
   down-mbps: 55
@@ -99,6 +108,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
+  udp: true
 - name: 🇩🇪 DE-TUIC-7
   server: 178.18.147.199
   port: 42487
@@ -112,6 +122,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
+  udp: true
 - name: 🇫🇷 FR-TUIC-8
   server: 163.172.116.154
   port: 33887
@@ -125,6 +136,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
+  udp: true
 - name: 🇫🇷 FR-TUIC-9
   server: 5.178.101.117
   port: 30006
@@ -138,6 +150,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
+  udp: true
 - type: hysteria
   server: 5.83.129.153
   port: 20088
@@ -153,6 +166,7 @@ proxies:
   - h3
   protocol: udp
   fast-open: false
+  udp: true
   name: 🇩🇪 DE-HYSTERIA-10
 - type: hysteria
   server: 5.83.129.90
@@ -169,84 +183,60 @@ proxies:
   - h3
   protocol: udp
   fast-open: false
+  udp: true
   name: 🇩🇪 DE-HYSTERIA-11
-- type: hysteria
+- type: hysteria2
   server: 157.254.223.43
   port: 27921
-  auth-str: dongtaiwang.com
-  auth_str: dongtaiwang.com
-  up: 100
-  down: 100
-  up-mbps: 100
-  down-mbps: 100
+  password: dongtaiwang.com
+  auth: dongtaiwang.com
   sni: ''
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  fast-open: false
-  name: 🇺🇸 US-Providence-HYSTERIA-12
-- type: hysteria
+  udp: true
+  name: 🇺🇸 US-Providence-HYSTERIA2-12
+- type: hysteria2
   server: 2001:bc8:32d7:17b::3
   port: 22000
-  auth-str: dongtaiwang.com
-  auth_str: dongtaiwang.com
-  up: 100
-  down: 100
-  up-mbps: 100
-  down-mbps: 100
+  password: dongtaiwang.com
+  auth: dongtaiwang.com
   sni: ''
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  fast-open: false
-  name: 🇫🇷 FR-HYSTERIA-13
-- type: hysteria
+  udp: true
+  name: 🇫🇷 FR-HYSTERIA2-13
+- type: hysteria2
   server: 2a10:3c80:0:f::2
   port: 39463
-  auth-str: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
-  auth_str: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
-  up: 100
-  down: 100
-  up-mbps: 100
-  down-mbps: 100
+  password: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
+  auth: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   sni: ''
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  fast-open: false
-  name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA-14
-- type: hysteria
+  udp: true
+  name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA2-14
+- type: hysteria2
   server: fan.193919.xyz
   port: 45889
-  auth-str: dongtaiwang.com
-  auth_str: dongtaiwang.com
-  up: 100
-  down: 100
-  up-mbps: 100
-  down-mbps: 100
+  password: dongtaiwang.com
+  auth: dongtaiwang.com
   sni: fan.193919.xyz
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  fast-open: false
-  name: UNK-HYSTERIA-15
-- type: hysteria
+  udp: true
+  name: UNK-HYSTERIA2-15
+- type: hysteria2
   server: 5.83.129.153
   port: 22222
-  auth-str: dongtaiwang.com
-  auth_str: dongtaiwang.com
-  up: 100
-  down: 100
-  up-mbps: 100
-  down-mbps: 100
+  password: dongtaiwang.com
+  auth: dongtaiwang.com
   sni: bing.com
   skip-cert-verify: true
   alpn:
   - h3
-  protocol: udp
-  fast-open: false
-  name: 🇩🇪 DE-HYSTERIA-16
+  udp: true
+  name: 🇩🇪 DE-HYSTERIA2-16
