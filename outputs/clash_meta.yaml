@@ -1,8 +1,8 @@
 proxies:
 - name: 🇹🇼 TW-New Taipei-VLESS-1
-  type: vless
   server: 118.166.0.164
   port: 44965
+  type: vless
   uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
   network: xhttp
   tls: true
@@ -18,9 +18,9 @@ proxies:
     path: /tvFTD707
     mode: auto
 - name: 🇩🇪 DE-VLESS-2
-  type: vless
   server: 89.144.35.230
   port: 54582
+  type: vless
   uuid: 5cfc52bc-e701-4160-89df-930a0c040576
   network: xhttp
   tls: true
@@ -36,9 +36,9 @@ proxies:
     path: 5cfc52bc-e701-4160-89df-930a0c040576-xh
     mode: auto
 - name: 🇺🇸 US-Providence-VLESS-3
-  type: vless
   server: 157.254.223.137
   port: 24089
+  type: vless
   uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
   network: xhttp
   tls: true
@@ -54,9 +54,9 @@ proxies:
     path: /S6wHAExO
     mode: auto
 - name: UNK-VLESS-4
-  type: vless
   server: '[2a14:7584:d097::a]'
   port: 11330
+  type: vless
   uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
   network: xhttp
   tls: true
@@ -72,9 +72,9 @@ proxies:
     path: /alvin9999.com
     mode: auto
 - name: UNK-HYSTERIA-5
-  type: hysteria
   server: '[2a14:7584:d097::a]'
   port: 54177
+  type: hysteria
   auth_str: dongtaiwang.com
   auth-str: dongtaiwang.com
   up: 11
@@ -84,9 +84,9 @@ proxies:
   alpn:
   - h3
 - name: UNK-TUIC-6
-  type: tuic
   server: ip1.758733.xyz
   port: 10088
+  type: tuic
   uuid: 9bbd1f42-7ae7-4239-bd10-a68de95e3295
   password: dongtaiwang.com
   sni: apple.com
@@ -97,9 +97,9 @@ proxies:
   skip-cert-verify: true
   congestion-controller: bbr
 - name: 🇩🇪 DE-TUIC-7
-  type: tuic
   server: 178.18.147.199
   port: 42487
+  type: tuic
   uuid: b35b50d1-7830-4a68-94db-349c2d2f8e43
   password: b35b50d1-7830-4a68-94db-349c2d2f8e43
   sni: www.microsoft.com
@@ -110,9 +110,9 @@ proxies:
   skip-cert-verify: true
   congestion-controller: bbr
 - name: 🇫🇷 FR-TUIC-8
-  type: tuic
   server: 163.172.116.154
   port: 33887
+  type: tuic
   uuid: 9adb384a-0f16-4501-a8f3-b6b2556fce87
   password: dongtaiwang.com
   sni: bing.com
@@ -123,9 +123,9 @@ proxies:
   skip-cert-verify: true
   congestion-controller: bbr
 - name: 🇫🇷 FR-TUIC-9
-  type: tuic
   server: 5.178.101.117
   port: 30006
+  type: tuic
   uuid: 36106e0f-4d9a-470b-a3fd-535f3b7a1e92
   password: dongtaiwang.com
   sni: www.microsoft.com
@@ -136,9 +136,9 @@ proxies:
   skip-cert-verify: true
   congestion-controller: bbr
 - name: 🇩🇪 DE-HYSTERIA-10
-  type: hysteria
   server: 5.83.129.153
   port: 20088
+  type: hysteria
   auth_str: dongtaiwang.com
   auth-str: dongtaiwang.com
   up: 100
@@ -148,9 +148,9 @@ proxies:
   alpn:
   - h3
 - name: 🇩🇪 DE-HYSTERIA-11
-  type: hysteria
   server: 5.83.129.90
   port: 54177
+  type: hysteria
   auth_str: dongtaiwang.com
   auth-str: dongtaiwang.com
   up: 100
@@ -160,9 +160,9 @@ proxies:
   alpn:
   - h3
 - name: 🇺🇸 US-Providence-HYSTERIA2-12
-  type: hysteria2
   server: 157.254.223.43
   port: 27921
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
   sni: www.bing.com
@@ -170,9 +170,9 @@ proxies:
   alpn:
   - h3
 - name: 🇫🇷 FR-HYSTERIA2-13
-  type: hysteria2
   server: '[2001:bc8:32d7:17b::3]'
   port: 22000
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
   sni: www.bing.com
@@ -180,9 +180,9 @@ proxies:
   alpn:
   - h3
 - name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA2-14
-  type: hysteria2
   server: '[2a10:3c80:0:f::2]'
   port: 39463
+  type: hysteria2
   password: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   auth: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   sni: www.bing.com
@@ -190,9 +190,9 @@ proxies:
   alpn:
   - h3
 - name: UNK-HYSTERIA2-15
-  type: hysteria2
   server: fan.193919.xyz
   port: 45889
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
   sni: fan.193919.xyz
@@ -200,9 +200,9 @@ proxies:
   alpn:
   - h3
 - name: 🇩🇪 DE-HYSTERIA2-16
-  type: hysteria2
   server: 5.83.129.153
   port: 22222
+  type: hysteria2
   password: dongtaiwang.com
   auth: dongtaiwang.com
   sni: bing.com
