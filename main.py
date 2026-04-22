@@ -11,6 +11,18 @@ import re
 import socket
 from urllib.parse import urlparse, parse_qs
 
+# ==================== YAML 渲染器极致修正 (解决排序问题) ====================
+class PureDumper(yaml.SafeDumper):
+    def represent_mapping(self, tag, mapping, flow_style=None):
+        # 强制不排序，保持代码中的插入顺序
+        return super(PureDumper, self).represent_mapping(tag, mapping, flow_style=flow_style)
+
+# 强制所有字典在输出时使用单行流式格式，且不排序
+def dict_representer(dumper, data):
+    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items(), flow_style=True)
+
+yaml.add_representer(dict, dict_representer, Dumper=PureDumper)
+
 # ==================== 全局设置 ====================
 socket.setdefaulttimeout(15)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)8s | %(message)s')
@@ -36,11 +48,6 @@ def get_location(ip: str) -> str:
         return f"{flag}{c}-{resp.city.name or ''}".strip('-')
     except: return "UNK"
 
-def parse_bw_int(val) -> int:
-    if not val: return 100
-    m = re.search(r'(\d+)', str(val))
-    return int(m.group(1)) if m else 100
-
 def make_fingerprint(p: dict) -> str:
     key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|{p.get('uuid') or p.get('password') or p.get('auth-str','')}"
     return hashlib.md5(key.lower().encode()).hexdigest()
@@ -56,33 +63,31 @@ def process_clash(data: str):
             p_type = str(p.get('type','')).lower()
             auth = p.get('auth-str') or p.get('auth_str') or p.get('password') or ''
             
-            # 建立对齐网友版的标准结构
-            node = {
-                "name": f"{get_location(p.get('server'))}-{p_type.upper()}-{len(extracted_proxies)+1}",
-                "server": p.get('server').strip('[]'),
-                "port": int(p.get('port')),
-                "type": p_type
-            }
+            # 【核心对齐】严格按照网友通畅版的字段顺序和内容
+            node = {"name": f"{get_location(p.get('server'))}-{p_type.upper()}-{len(extracted_proxies)+1}"}
+            node["server"] = p.get('server').strip('[]')
+            node["port"] = int(p.get('port'))
+            node["type"] = p_type
             
             if p_type == 'hysteria':
                 node.update({
                     "auth_str": auth, "auth-str": auth,
-                    "up": parse_bw_int(p.get('up')), "down": parse_bw_int(p.get('down')),
+                    "up": 100, "down": 100, # 对齐网友，强制 100 以提高成功率
                     "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
                 })
             elif p_type == 'hysteria2':
                 node.update({
-                    "password": auth, "auth": auth,
-                    "skip-cert-verify": False, "alpn": ['h3'] # H2 必须开启证书校验才通
+                    "password": auth, "auth": auth, "sni": p.get('sni', 'www.bing.com'),
+                    "skip-cert-verify": False, "alpn": ['h3']
                 })
-                if p.get('sni'): node['sni'] = p.get('sni')
             elif p_type == 'tuic':
                 node.update({
-                    "uuid": p.get('uuid'), "password": p.get('password'),
+                    "uuid": p.get('uuid'), "password": auth,
                     "skip-cert-verify": False, "alpn": ['h3'], "udp-relay-mode": "native", "congestion-controller": "bbr"
                 })
             else:
-                node.update(p)
+                for k, v in p.items():
+                    if k not in node: node[k] = v
 
             fp = make_fingerprint(node)
             if fp not in servers_list:
@@ -103,19 +108,17 @@ def process_json(data: str):
                 if not s: continue
                 addr = str(s).split(',')[0]
                 host, port = (addr.rsplit(':', 1) if ':' in addr else (addr, 443))
-                host = host.strip('[]')
                 auth = content.get('auth_str') or content.get('auth') or content.get('password', '')
                 
-                node = {
-                    "name": f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}",
-                    "server": host, "port": int(port), "type": typ
-                }
+                node = {"name": f"{get_location(host)}-{typ.upper()}-{len(extracted_proxies)+1}"}
+                node["server"] = host.strip('[]')
+                node["port"] = int(port)
+                node["type"] = typ
                 
                 if typ == "hysteria":
                     node.update({
                         "auth_str": auth, "auth-str": auth,
-                        "up": parse_bw_int(content.get('up')), "down": parse_bw_int(content.get('down')),
-                        "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
+                        "up": 100, "down": 100, "fast-open": False, "skip-cert-verify": True, "alpn": ['h3']
                     })
                 else:
                     node.update({
@@ -128,7 +131,7 @@ def process_json(data: str):
                     extracted_proxies.append(node)
                     servers_list.append(fp)
         
-        # VLESS 逻辑对齐
+        # VLESS 逻辑排序对齐
         for ob in content.get('outbounds', []):
             if not isinstance(ob, dict): continue
             if (ob.get('protocol') or ob.get('type') or '').lower() == 'vless':
@@ -139,12 +142,12 @@ def process_json(data: str):
                 reality = stream.get('realitySettings', {}) or stream.get('tlsSettings', {})
                 network = stream.get('network', 'tcp')
                 
-                node = {
-                    "name": f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}",
+                node = {"name": f"{get_location(server)}-VLESS-{len(extracted_proxies)+1}"}
+                node.update({
                     "server": server, "port": int(vnext.get('port', 443)), "type": "vless",
                     "uuid": vnext.get('users', [{}])[0].get('id'), "network": network, "tls": True,
-                    "sni": reality.get('serverName', ''), "alpn": ['h3'], "skip-cert-verify": False
-                }
+                    "sni": reality.get('serverName', 'www.bing.com'), "alpn": ['h3'], "skip-cert-verify": False
+                })
                 if network == 'tcp': node['flow'] = vnext.get('users', [{}])[0].get('flow', '')
                 if stream.get('security') == 'reality':
                     node['reality-opts'] = {"public-key": reality.get('publicKey', ''), "short-id": reality.get('shortId', '')}
@@ -171,11 +174,10 @@ def process_file(file_path: str):
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
     process_file("urls/sources.txt")
-    # 使用 default_flow_style=True 强制让每个节点输出为单行 {} 格式，完全复刻网友版
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         f.write("proxies:\n")
         for proxy in extracted_proxies:
-            # 每一个节点用 flow style 输出，这样既美观又解决了 IPv6 括号和排序问题
-            yaml_str = yaml.dump(proxy, allow_unicode=True, default_flow_style=True, width=float("inf"))
+            # 使用 Dumper=PureDumper 强制执行我们自定义的“不排序、单行、name 领先”逻辑
+            yaml_str = yaml.dump(proxy, Dumper=PureDumper, allow_unicode=True, sort_keys=False, width=float("inf"))
             f.write(f"  - {yaml_str.strip()}\n")
     print(f"✅ 提取完成，共 {len(extracted_proxies)} 个节点")
