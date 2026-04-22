@@ -3,10 +3,8 @@ proxies:
   server: 118.166.0.164
   port: 44965
   uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
-  flow: xtls-rprx-vision
   network: xhttp
   tls: true
-  udp: true
   sni: www.cloudflare.com
   client-fingerprint: chrome
   alpn:
@@ -23,10 +21,8 @@ proxies:
   server: 89.144.35.230
   port: 54582
   uuid: 5cfc52bc-e701-4160-89df-930a0c040576
-  flow: xtls-rprx-vision
   network: xhttp
   tls: true
-  udp: true
   sni: apple.com
   client-fingerprint: chrome
   alpn:
@@ -43,10 +39,8 @@ proxies:
   server: 157.254.223.137
   port: 24089
   uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
-  flow: xtls-rprx-vision
   network: xhttp
   tls: true
-  udp: true
   sni: www.microsoft.com
   client-fingerprint: chrome
   alpn:
@@ -65,7 +59,6 @@ proxies:
   uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
   network: xhttp
   tls: true
-  udp: true
   sni: toarumajutsunoindex.fandom.com
   client-fingerprint: chrome
   alpn:
@@ -90,10 +83,7 @@ proxies:
   protocol: udp
   up: 11
   down: 55
-  udp: true
   auth_str: dongtaiwang.com
-  up-mbps: 11
-  down-mbps: 55
   fast-open: false
 - name: UNK-TUIC-6
   server: ip1.758733.xyz
@@ -108,7 +98,6 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-  udp: true
 - name: 🇩🇪 DE-TUIC-7
   server: 178.18.147.199
   port: 42487
@@ -122,7 +111,6 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-  udp: true
 - name: 🇫🇷 FR-TUIC-8
   server: 163.172.116.154
   port: 33887
@@ -136,7 +124,6 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-  udp: true
 - name: 🇫🇷 FR-TUIC-9
   server: 5.178.101.117
   port: 30006
@@ -150,73 +137,63 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-  udp: true
 - type: hysteria
   server: 5.83.129.153
   port: 20088
   auth-str: dongtaiwang.com
   auth_str: dongtaiwang.com
-  up: 11
-  down: 55
-  up-mbps: 11
-  down-mbps: 55
+  up: 100
+  down: 100
   sni: apple.com
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
   fast-open: false
-  udp: true
   name: 🇩🇪 DE-HYSTERIA-10
 - type: hysteria
   server: 5.83.129.90
   port: 54177
   auth-str: dongtaiwang.com
   auth_str: dongtaiwang.com
-  up: 11
-  down: 55
-  up-mbps: 11
-  down-mbps: 55
+  up: 100
+  down: 100
   sni: apple.com
   skip-cert-verify: true
   alpn:
   - h3
   protocol: udp
   fast-open: false
-  udp: true
   name: 🇩🇪 DE-HYSTERIA-11
 - type: hysteria2
   server: 157.254.223.43
   port: 27921
   password: dongtaiwang.com
   auth: dongtaiwang.com
-  sni: ''
+  sni: www.bing.com
   skip-cert-verify: true
   alpn:
   - h3
-  udp: true
   name: 🇺🇸 US-Providence-HYSTERIA2-12
 - type: hysteria2
   server: 2001:bc8:32d7:17b::3
   port: 22000
   password: dongtaiwang.com
   auth: dongtaiwang.com
-  sni: ''
+  sni: '[2001:bc8:32d7:17b::3]'
   skip-cert-verify: true
   alpn:
   - h3
-  udp: true
   name: 🇫🇷 FR-HYSTERIA2-13
 - type: hysteria2
   server: 2a10:3c80:0:f::2
   port: 39463
   password: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   auth: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
-  sni: ''
+  sni: '[2a10:3c80:0:f::2]'
   skip-cert-verify: true
   alpn:
   - h3
-  udp: true
   name: 🇩🇪 DE-Frankfurt am Main-HYSTERIA2-14
 - type: hysteria2
   server: fan.193919.xyz
@@ -227,7 +204,6 @@ proxies:
   skip-cert-verify: true
   alpn:
   - h3
-  udp: true
   name: UNK-HYSTERIA2-15
 - type: hysteria2
   server: 5.83.129.153
@@ -238,5 +214,4 @@ proxies:
   skip-cert-verify: true
   alpn:
   - h3
-  udp: true
   name: 🇩🇪 DE-HYSTERIA2-16
