@@ -21,6 +21,7 @@ EXCLUDE_TYPES = ['juicity', 'mieru', 'shadowquic']
 servers_list = []
 extracted_proxies = []
 
+# GeoIP 初始化
 geo_reader = None
 try:
     if os.path.exists('GeoLite2-City.mmdb'):
@@ -78,8 +79,8 @@ def add_proxy(p: dict):
     p_type = str(p.get('type', '')).lower()
     if p_type in EXCLUDE_TYPES: return
 
-    # 清理所有值为 None 或空字符串的字段，防止生成 password: null
-    p = {k: v for k, v in p.items() if v is not None and v != ''}
+    # 只清理第一层的 None 值，保留嵌套字典
+    p = {k: v for k, v in p.items() if v is not None}
 
     fp = make_fingerprint(p)
     if fp not in servers_list:
@@ -90,42 +91,77 @@ def add_proxy(p: dict):
         extracted_proxies.append(p)
         servers_list.append(fp)
 
+def parse_vless_uri(link: str):
+    """专门为 VLESS 优化的解析器"""
+    try:
+        # 移除备注部分
+        main_part = link.split('#')[0]
+        # 使用正则提取 uuid, host, port
+        pattern = r"vless://([^@]+)@([^:/?#\s]+):(\d+)"
+        match = re.match(pattern, main_part)
+        if not match: return
+        
+        uuid, host, port = match.groups()
+        
+        # 提取查询参数
+        query_str = ""
+        if '?' in main_part:
+            query_str = main_part.split('?')[1]
+        q = parse_qs(query_str)
+        
+        p = {
+            "type": "vless",
+            "server": host,
+            "port": int(port),
+            "uuid": uuid,
+            "network": q.get('type', ['tcp'])[0],
+            "tls": True,
+            "sni": q.get('sni', [None])[0] or q.get('serverName', [None])[0],
+            "flow": q.get('flow', [None])[0],
+            "skip-cert-verify": True
+        }
+        
+        # Reality 处理
+        if q.get('security', [''])[0] == 'reality':
+            p['reality-opts'] = {
+                "public-key": q.get('pbk', [''])[0],
+                "short-id": q.get('sid', [''])[0]
+            }
+        
+        # xhttp 处理
+        if p['network'] == 'xhttp':
+            p['xhttp-opts'] = {
+                "path": q.get('path', ['/'])[0],
+                "mode": q.get('mode', ['auto'])[0]
+            }
+            
+        add_proxy(p)
+    except Exception as e:
+        logger.warning(f"解析 VLESS 失败: {e}")
+
 def parse_uri(l: str):
     l = l.strip()
     if not l: return
-    try:
-        if l.startswith('vless://'):
-            # 兼容处理：vless://uuid@host:port?query#name
-            pattern = r"vless://([^@]+)@([^:/?#]+):(\d+)(\?[^#]*)?"
-            m = re.match(pattern, l)
-            if m:
-                uuid, host, port, query = m.groups()
-                q = parse_qs(query[1:]) if query else {}
-                p = {
-                    "type": "vless", "server": host, "port": int(port), "uuid": uuid,
-                    "network": q.get('type', ['tcp'])[0],
-                    "tls": True, "skip-cert-verify": True,
-                    "sni": q.get('sni', [None])[0] or q.get('serverName', [None])[0],
-                    "flow": q.get('flow', [None])[0]
-                }
-                if q.get('security', [''])[0] == 'reality':
-                    p['reality-opts'] = {"public-key": q.get('pbk', [''])[0], "short-id": q.get('sid', [''])[0]}
-                if p['network'] == 'xhttp':
-                    p['xhttp-opts'] = {"path": q.get('path', ['/'])[0], "mode": q.get('mode', ['auto'])[0]}
-                add_proxy(p)
-        elif l.startswith('vmess://'):
+    if l.startswith('vless://'):
+        parse_vless_uri(l)
+    elif l.startswith('vmess://'):
+        try:
             c = json.loads(safe_base64_decode(l[8:]))
             add_proxy({"type": "vmess", "server": c.get('add'), "port": int(c.get('port')), "uuid": c.get('id'), "network": c.get('net', 'tcp'), "tls": c.get('tls') in ('tls', True, 1)})
-        elif l.startswith('ss://'):
+        except: pass
+    elif l.startswith('ss://'):
+        try:
             u = urlparse(l)
             userinfo = safe_base64_decode(u.username) if u.username else ""
             if ':' in userinfo:
                 m, pwd = userinfo.split(':', 1)
                 add_proxy({"type": "ss", "server": u.hostname, "port": u.port, "cipher": m, "password": pwd})
-        elif l.startswith(('hysteria2://', 'hy2://')):
+        except: pass
+    elif l.startswith(('hysteria2://', 'hy2://')):
+        try:
             u = urlparse(l); q = parse_qs(u.query)
             add_proxy({"type": "hysteria2", "server": u.hostname, "port": u.port or 443, "password": u.username, "sni": q.get('sni',[''])[0], "skip-cert-verify": True, "alpn": ["h3"]})
-    except: pass
+        except: pass
 
 def process_native_json(data: str):
     try:
@@ -165,7 +201,10 @@ def process_file(file_path: str):
                 for line in content.splitlines(): parse_uri(line)
         except: pass
 
-# ====================== 主程序 ======================
+# ====================== 自定义 YAML 导出（禁用锚点） ======================
+class NoAliasDumper(yaml.SafeDumper):
+    def ignore_aliases(self, data):
+        return True
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
@@ -173,7 +212,9 @@ if __name__ == "__main__":
         for f in sorted(os.listdir("urls")):
             if f.endswith(".txt"): process_file(os.path.join("urls", f))
 
+    # 使用 list() 强制拷贝，配合 Dumper 彻底解决锚点问题
     node_names = [p['name'] for p in extracted_proxies]
+    
     clash_config = {
         "mixed-port": 7890, "allow-lan": True, "mode": "rule", "ipv6": True,
         "dns": {
@@ -187,9 +228,9 @@ if __name__ == "__main__":
         },
         "proxies": extracted_proxies,
         "proxy-groups": [
-            {"name": "🚀 节点选择", "type": "select", "proxies": ["♻️ 自动选择", "⚖️ 负载均衡", "DIRECT"] + node_names},
-            {"name": "♻️ 自动选择", "type": "url-test", "url": "http://www.gstatic.com/generate_204", "interval": 300, "proxies": node_names},
-            {"name": "⚖️ 负载均衡", "type": "load-balance", "url": "http://www.gstatic.com/generate_204", "interval": 300, "proxies": node_names},
+            {"name": "🚀 节点选择", "type": "select", "proxies": ["♻️ 自动选择", "⚖️ 负载均衡", "DIRECT"] + list(node_names)},
+            {"name": "♻️ 自动选择", "type": "url-test", "url": "http://www.gstatic.com/generate_204", "interval": 300, "proxies": list(node_names)},
+            {"name": "⚖️ 负载均衡", "type": "load-balance", "url": "http://www.gstatic.com/generate_204", "interval": 300, "strategy": "consistent-hashing", "proxies": list(node_names)},
             {"name": "🤖 Gemini/AI", "type": "select", "proxies": ["🚀 节点选择", "♻️ 自动选择"]},
             {"name": "🎯 全球直连", "type": "select", "proxies": ["DIRECT", "🚀 节点选择"]}
         ],
@@ -207,6 +248,7 @@ if __name__ == "__main__":
         ]
     }
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
-        # 使用 Dumper 避免生成 YAML 锚点（&id001），让配置更具可读性
-        yaml.dump(clash_config, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
-    print(f"✅ 完美合并完成！当前节点总数: {len(extracted_proxies)}")
+        # 核心：使用 NoAliasDumper 禁用锚点，sort_keys=False 保持顺序
+        yaml.dump(clash_config, f, Dumper=NoAliasDumper, allow_unicode=True, sort_keys=False, default_flow_style=False)
+    
+    print(f"✅ 处理完成！VLESS 端口与 Reality 参数已修复，锚点已禁用。节点数: {len(extracted_proxies)}")
