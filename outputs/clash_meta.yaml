@@ -20,8 +20,6 @@ proxies:
   server: 118.166.0.164
   port: 443
   uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
-  password: null
-  sni: null
   skip-cert-verify: true
   name: 🇹🇼TW-VLESS-1
   udp: true
@@ -29,8 +27,6 @@ proxies:
   server: 89.144.35.230
   port: 443
   uuid: 5cfc52bc-e701-4160-89df-930a0c040576
-  password: null
-  sni: null
   skip-cert-verify: true
   name: 🇩🇪DE-VLESS-2
   udp: true
@@ -38,8 +34,6 @@ proxies:
   server: 157.254.223.137
   port: 443
   uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
-  password: null
-  sni: null
   skip-cert-verify: true
   name: 🇺🇸US-VLESS-3
   udp: true
@@ -47,8 +41,6 @@ proxies:
   server: 2a14:7584:d097::a
   port: 443
   uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
-  password: null
-  sni: null
   skip-cert-verify: true
   name: 🏳️UNK-VLESS-4
   udp: true
