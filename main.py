@@ -72,114 +72,114 @@ def parse_server_port(srv):
         if len(parts) == 2 and parts[1].isdigit(): return parts[0], int(parts[1]), pr
     return srv, 443, pr
 
-# ====================== 解析逻辑 ======================
+# ====================== 深度解析逻辑 ======================
 
 def add_proxy(p: dict):
     if not p or not p.get('server'): return
     p_type = str(p.get('type', '')).lower()
     if p_type in EXCLUDE_TYPES: return
 
-    # 只清理第一层的 None 值，保留嵌套字典
+    # 强制清理空字段，但保留嵌套字典
     p = {k: v for k, v in p.items() if v is not None}
 
     fp = make_fingerprint(p)
     if fp not in servers_list:
-        loc = get_location(p.get('server'))
+        loc = get_location(str(p.get('server')))
         idx = len(extracted_proxies) + 1
         p['name'] = f"{loc}-{p_type.upper()}-{idx}"
         p['udp'] = True
         extracted_proxies.append(p)
         servers_list.append(fp)
 
-def parse_vless_uri(link: str):
-    """专门为 VLESS 优化的解析器"""
+def parse_uri(link: str):
+    link = link.strip()
+    if not link: return
     try:
-        # 移除备注部分
-        main_part = link.split('#')[0]
-        # 使用正则提取 uuid, host, port
-        pattern = r"vless://([^@]+)@([^:/?#\s]+):(\d+)"
-        match = re.match(pattern, main_part)
-        if not match: return
-        
-        uuid, host, port = match.groups()
-        
-        # 提取查询参数
-        query_str = ""
-        if '?' in main_part:
-            query_str = main_part.split('?')[1]
-        q = parse_qs(query_str)
-        
-        p = {
-            "type": "vless",
-            "server": host,
-            "port": int(port),
-            "uuid": uuid,
-            "network": q.get('type', ['tcp'])[0],
-            "tls": True,
-            "sni": q.get('sni', [None])[0] or q.get('serverName', [None])[0],
-            "flow": q.get('flow', [None])[0],
-            "skip-cert-verify": True
-        }
-        
-        # Reality 处理
-        if q.get('security', [''])[0] == 'reality':
-            p['reality-opts'] = {
-                "public-key": q.get('pbk', [''])[0],
-                "short-id": q.get('sid', [''])[0]
-            }
-        
-        # xhttp 处理
-        if p['network'] == 'xhttp':
-            p['xhttp-opts'] = {
-                "path": q.get('path', ['/'])[0],
-                "mode": q.get('mode', ['auto'])[0]
-            }
+        if link.startswith('vless://'):
+            # 强化版 URI 解析：uuid@host:port
+            main_part = link.split('#')[0]
+            data_part = main_part[8:]
+            uuid_part, rest = data_part.split('@', 1)
             
-        add_proxy(p)
-    except Exception as e:
-        logger.warning(f"解析 VLESS 失败: {e}")
-
-def parse_uri(l: str):
-    l = l.strip()
-    if not l: return
-    if l.startswith('vless://'):
-        parse_vless_uri(l)
-    elif l.startswith('vmess://'):
-        try:
-            c = json.loads(safe_base64_decode(l[8:]))
+            # 分离 host:port 和 query
+            host_port_part = rest.split('?')[0]
+            query_part = rest.split('?')[1] if '?' in rest else ""
+            
+            host, port, _ = parse_server_port(host_port_part)
+            q = parse_qs(query_part)
+            
+            p = {
+                "type": "vless", "server": host, "port": int(port), "uuid": uuid_part,
+                "network": q.get('type', ['tcp'])[0], "tls": True, "skip-cert-verify": True,
+                "sni": q.get('sni', [None])[0] or q.get('serverName', [None])[0],
+                "flow": q.get('flow', [None])[0]
+            }
+            if q.get('security', [''])[0] == 'reality':
+                p['reality-opts'] = {"public-key": q.get('pbk', [''])[0], "short-id": q.get('sid', [''])[0]}
+            if p['network'] == 'xhttp':
+                p['xhttp-opts'] = {"path": q.get('path', ['/'])[0], "mode": q.get('mode', ['auto'])[0]}
+            add_proxy(p)
+            
+        elif link.startswith('vmess://'):
+            c = json.loads(safe_base64_decode(link[8:]))
             add_proxy({"type": "vmess", "server": c.get('add'), "port": int(c.get('port')), "uuid": c.get('id'), "network": c.get('net', 'tcp'), "tls": c.get('tls') in ('tls', True, 1)})
-        except: pass
-    elif l.startswith('ss://'):
-        try:
-            u = urlparse(l)
+        elif link.startswith('ss://'):
+            u = urlparse(link)
             userinfo = safe_base64_decode(u.username) if u.username else ""
             if ':' in userinfo:
                 m, pwd = userinfo.split(':', 1)
                 add_proxy({"type": "ss", "server": u.hostname, "port": u.port, "cipher": m, "password": pwd})
-        except: pass
-    elif l.startswith(('hysteria2://', 'hy2://')):
-        try:
-            u = urlparse(l); q = parse_qs(u.query)
+        elif link.startswith(('hysteria2://', 'hy2://')):
+            u = urlparse(link); q = parse_qs(u.query)
             add_proxy({"type": "hysteria2", "server": u.hostname, "port": u.port or 443, "password": u.username, "sni": q.get('sni',[''])[0], "skip-cert-verify": True, "alpn": ["h3"]})
-        except: pass
+    except: pass
 
 def process_native_json(data: str):
+    """
+    针对 Xray/Sing-box JSON 进行深度结构化提取
+    """
     try:
         c = json.loads(data)
-        if 'up_mbps' in c: # Hy1
+        # 针对 Hysteria 1/2 原生 JSON
+        if 'up_mbps' in c:
             h, p, _ = parse_server_port(c.get('server'))
             add_proxy({"type": "hysteria", "server": h, "port": p, "auth-str": c.get('auth_str') or c.get('password'), "up": c.get('up_mbps'), "down": c.get('down_mbps'), "sni": c.get('server_name'), "skip-cert-verify": True, "alpn": ["h3"]})
-        elif 'auth' in c and 'bandwidth' in c: # Hy2
-            h, p, pr = parse_server_port(c.get('server'))
-            add_proxy({"type": "hysteria2", "server": h, "port": p, "password": c.get('auth'), "sni": c.get('tls',{}).get('sni'), "skip-cert-verify": True, "alpn": ["h3"]})
+            return
+        
+        # 针对 Sing-box/Xray Outbounds
         for ob in c.get('outbounds', []):
             typ = (ob.get('type') or ob.get('protocol') or '').lower()
-            h = ob.get('server') or ob.get('settings', {}).get('vnext', [{}])[0].get('address')
-            if h:
-                p_port = ob.get('server_port') or ob.get('port') or 443
-                p = {"type": typ, "server": h, "port": int(p_port), "uuid": ob.get('uuid') or ob.get('settings', {}).get('vnext', [{}])[0].get('users', [{}])[0].get('id'), "password": ob.get('password') or ob.get('auth_str'), "sni": ob.get('tls', {}).get('server_name') or ob.get('sni'), "skip-cert-verify": True}
-                if typ in ('hysteria', 'hysteria2'): p['alpn'] = ["h3"]
-                add_proxy(p)
+            if typ not in ('vless', 'vmess', 'tuic', 'hysteria', 'hysteria2'): continue
+            
+            settings = ob.get('settings', {})
+            stream = ob.get('streamSettings', {})
+            
+            # 关键：从 vnext 提取真正服务器地址和端口
+            vnext = settings.get('vnext', [{}])[0]
+            server = ob.get('server') or vnext.get('address')
+            port = ob.get('port') or ob.get('server_port') or vnext.get('port')
+            
+            if not server or not port: continue
+            
+            p = {"type": typ, "server": server, "port": int(port), "skip-cert-verify": True}
+            
+            # 提取认证信息
+            p['uuid'] = ob.get('uuid') or vnext.get('users', [{}])[0].get('id')
+            p['password'] = ob.get('password') or ob.get('auth_str')
+            
+            # 提取 TLS/SNI
+            tls_cfg = ob.get('tls', {}) or stream.get('tlsSettings', {})
+            p['sni'] = tls_cfg.get('server_name') or tls_cfg.get('serverName') or stream.get('serverName')
+            
+            # 提取传输层 (xhttp/ws)
+            transport = ob.get('transport', {}) or stream
+            if (transport.get('network') or transport.get('type')) == 'xhttp':
+                p['network'] = 'xhttp'
+                xh = transport.get('xhttpSettings') or transport
+                p['xhttp-opts'] = {"path": xh.get('path', '/'), "mode": xh.get('mode', 'auto')}
+                
+            if typ in ('hysteria', 'hysteria2'): p['alpn'] = ["h3"]
+            add_proxy(p)
     except: pass
 
 def process_file(file_path: str):
@@ -201,10 +201,9 @@ def process_file(file_path: str):
                 for line in content.splitlines(): parse_uri(line)
         except: pass
 
-# ====================== 自定义 YAML 导出（禁用锚点） ======================
+# ====================== 自定义 YAML 导出 ======================
 class NoAliasDumper(yaml.SafeDumper):
-    def ignore_aliases(self, data):
-        return True
+    def ignore_aliases(self, data): return True
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
@@ -212,9 +211,7 @@ if __name__ == "__main__":
         for f in sorted(os.listdir("urls")):
             if f.endswith(".txt"): process_file(os.path.join("urls", f))
 
-    # 使用 list() 强制拷贝，配合 Dumper 彻底解决锚点问题
     node_names = [p['name'] for p in extracted_proxies]
-    
     clash_config = {
         "mixed-port": 7890, "allow-lan": True, "mode": "rule", "ipv6": True,
         "dns": {
@@ -248,7 +245,5 @@ if __name__ == "__main__":
         ]
     }
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
-        # 核心：使用 NoAliasDumper 禁用锚点，sort_keys=False 保持顺序
         yaml.dump(clash_config, f, Dumper=NoAliasDumper, allow_unicode=True, sort_keys=False, default_flow_style=False)
-    
-    print(f"✅ 处理完成！VLESS 端口与 Reality 参数已修复，锚点已禁用。节点数: {len(extracted_proxies)}")
+    print(f"✅ 完美合并！VLESS 端口与 Reality 参数已通过深度解析修复。节点数: {len(extracted_proxies)}")
