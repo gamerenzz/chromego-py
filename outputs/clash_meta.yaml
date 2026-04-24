@@ -14,31 +14,67 @@ proxies:
 - name: 🇹🇼TW-VLESS-1
   type: vless
   server: 118.166.0.164
-  port: 443
+  port: 44965
   uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
-  tls: false
-  sni: null
+  network: xhttp
+  tls: true
+  sni: www.cloudflare.com
+  alpn:
+  - h3
+  reality-opts:
+    public-key: z1_FVLAxN66t1373faq2D-BV8B7CyILrwc0vMiYw9Cc
+    short-id: d3c7911a
+  xhttp-opts:
+    path: /tvFTD707
+    mode: auto
 - name: 🇩🇪DE-VLESS-2
   type: vless
   server: 89.144.35.230
-  port: 443
+  port: 54582
   uuid: 5cfc52bc-e701-4160-89df-930a0c040576
-  tls: false
-  sni: null
+  network: xhttp
+  tls: true
+  sni: apple.com
+  alpn:
+  - h3
+  reality-opts:
+    public-key: kfw5DgkyKiovC3dzb-o2PUYnZPnbYvbx2IwERUv9czY
+    short-id: 225e2cc8
+  xhttp-opts:
+    path: 5cfc52bc-e701-4160-89df-930a0c040576-xh
+    mode: auto
 - name: 🇺🇸US-VLESS-3
   type: vless
   server: 157.254.223.137
-  port: 443
+  port: 24089
   uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
-  tls: false
-  sni: null
+  network: xhttp
+  tls: true
+  sni: www.microsoft.com
+  alpn:
+  - h3
+  reality-opts:
+    public-key: njrfRguP2WJFUtBH11bJTaIEfGIb28V7_Sahlhbldyw
+    short-id: 54ffd503
+  xhttp-opts:
+    path: /S6wHAExO
+    mode: auto
 - name: 🏳️UNK-VLESS-4
   type: vless
   server: 2a14:7584:d097::a
-  port: 443
+  port: 11330
   uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
-  tls: false
-  sni: null
+  network: xhttp
+  tls: true
+  sni: toarumajutsunoindex.fandom.com
+  alpn:
+  - h3
+  reality-opts:
+    public-key: 3HaD5Ztk3X4gi3aJLVesV6KSJTW2YGG-hvGD3ZumJkE
+    short-id: fa789b2f5ff56959
+  xhttp-opts:
+    path: /alvin9999.com
+    mode: auto
 - name: 🏳️UNK-HYSTERIA-5
   type: hysteria
   server: 2a14:7584:d097::a
@@ -161,15 +197,7 @@ proxies:
   auth-str: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   up: 100
   down: 100
-- name: 🇫🇷FR-TUIC-15
-  type: tuic
-  server: 163.172.116.154
-  port: 33887
-- name: 🇩🇪DE-TUIC-16
-  type: tuic
-  server: 89.144.35.232
-  port: 17306
-- name: 🇹🇼TW-HYSTERIA-17
+- name: 🇹🇼TW-HYSTERIA-15
   type: hysteria
   server: fan.193919.xyz
   port: 45889
@@ -181,7 +209,7 @@ proxies:
   auth-str: dongtaiwang.com
   up: 100
   down: 100
-- name: 🇩🇪DE-HYSTERIA-18
+- name: 🇩🇪DE-HYSTERIA-16
   type: hysteria
   server: 5.83.129.153
   port: 22222
@@ -193,6 +221,61 @@ proxies:
   auth-str: dongtaiwang.com
   up: 100
   down: 100
+- name: 🏳️UNK-SS-17
+  type: ss
+  server: 2a14:7584:d118::d
+  port: 11111
+  cipher: aes-256-gcm
+  password: github.com/Alvin9999-newpac/fanqiang
+- name: 🇩🇪DE-HY2-18
+  type: hysteria2
+  server: 178.18.147.66
+  port: 29900
+  password: github.com%2FAlvin9999-newpac%2Ffanqiang
+  sni: www.microsoft.com
+  skip-cert-verify: true
+  alpn:
+  - h3
+- name: 🇩🇪DE-VLESS-19
+  type: vless
+  server: 178.18.147.163
+  port: 15530
+  uuid: ac121f97-544b-47b3-bf91-eca9c45db548
+  network: xhttp
+  tls: true
+  sni: www.microsoft.com
+  client-fingerprint: chrome
+  alpn:
+  - h3
+  reality-opts:
+    public-key: w8JMWRzOsYUuBeI0i_te745nBRlDocMOTgGMMZLioik
+    short-id: aa45df0f
+  xhttp-opts:
+    path: /github.com/Alvin9999-newpac/fanqiang
+    mode: auto
+- name: 🏳️UNK-VMESS-20
+  type: vmess
+  server: 2a14:7584:d117::14
+  port: 27802
+  uuid: b9887ee9-606b-4665-a4ea-7443ca049a68
+  alterId: 0
+  cipher: auto
+  network: ws
+  tls: false
+  udp: true
+  ws-opts:
+    path: /github.com/Alvin9999-newpac/fanqiang
+    headers:
+      Host: ''
+- name: 🇩🇪DE-HY2-21
+  type: hysteria2
+  server: 83.243.86.103
+  port: 38563
+  password: github.com%2FAlvin9999-newpac%2Ffanqiang
+  sni: www.microsoft.com
+  skip-cert-verify: true
+  alpn:
+  - h3
 proxy-groups:
 - name: 🚀 节点选择
   type: select
@@ -213,10 +296,13 @@ proxy-groups:
   - 🇺🇸US-HYSTERIA2-12
   - 🇫🇷FR-HYSTERIA-13
   - 🇩🇪DE-HYSTERIA-14
-  - 🇫🇷FR-TUIC-15
-  - 🇩🇪DE-TUIC-16
-  - 🇹🇼TW-HYSTERIA-17
-  - 🇩🇪DE-HYSTERIA-18
+  - 🇹🇼TW-HYSTERIA-15
+  - 🇩🇪DE-HYSTERIA-16
+  - 🏳️UNK-SS-17
+  - 🇩🇪DE-HY2-18
+  - 🇩🇪DE-VLESS-19
+  - 🏳️UNK-VMESS-20
+  - 🇩🇪DE-HY2-21
 - name: ♻️ 自动选择
   type: url-test
   url: http://www.gstatic.com/generate_204
@@ -236,10 +322,13 @@ proxy-groups:
   - 🇺🇸US-HYSTERIA2-12
   - 🇫🇷FR-HYSTERIA-13
   - 🇩🇪DE-HYSTERIA-14
-  - 🇫🇷FR-TUIC-15
-  - 🇩🇪DE-TUIC-16
-  - 🇹🇼TW-HYSTERIA-17
-  - 🇩🇪DE-HYSTERIA-18
+  - 🇹🇼TW-HYSTERIA-15
+  - 🇩🇪DE-HYSTERIA-16
+  - 🏳️UNK-SS-17
+  - 🇩🇪DE-HY2-18
+  - 🇩🇪DE-VLESS-19
+  - 🏳️UNK-VMESS-20
+  - 🇩🇪DE-HY2-21
 - name: 🎯 全球直连
   type: select
   proxies:
