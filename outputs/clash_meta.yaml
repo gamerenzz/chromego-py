@@ -184,6 +184,62 @@ proxies:
   skip-cert-verify: true
   name: 🇩🇪DE-TUIC-15
   udp: true
+- type: ssr
+  server: ssr2.762988.xyz
+  port: 33336
+  protocol: auth_chain_a
+  cipher: chacha20-ietf
+  obfs: tls1.2_ticket_auth
+  password: dongtaiwang.com
+  name: 🇫🇷FR-SSR-16
+  udp: true
+- type: ss
+  server: 2a14:7584:d118::d
+  port: 11111
+  cipher: aes-256-gcm
+  password: github.com/Alvin9999-newpac/fanqiang
+  name: 🏳️UNK-SS-17
+  udp: true
+- type: hysteria2
+  server: 178.18.147.66
+  port: 29900
+  password: github.com/Alvin9999-newpac/fanqiang
+  sni: www.microsoft.com
+  skip-cert-verify: true
+  name: 🇩🇪DE-HYSTERIA2-18
+  udp: true
+- type: vless
+  server: 178.18.147.163
+  port: 15530
+  uuid: ac121f97-544b-47b3-bf91-eca9c45db548
+  network: xhttp
+  tls: true
+  sni: www.microsoft.com
+  flow: ''
+  reality-opts:
+    public-key: w8JMWRzOsYUuBeI0i_te745nBRlDocMOTgGMMZLioik
+    short-id: aa45df0f
+  xhttp-opts:
+    path: /github.com/Alvin9999-newpac/fanqiang
+    mode: auto
+  name: 🇩🇪DE-VLESS-19
+  udp: true
+- type: vmess
+  server: 2a14:7584:d117::14
+  port: 27802
+  uuid: b9887ee9-606b-4665-a4ea-7443ca049a68
+  network: ws
+  tls: false
+  name: 🏳️UNK-VMESS-20
+  udp: true
+- type: hysteria2
+  server: 83.243.86.103
+  port: 38563
+  password: github.com/Alvin9999-newpac/fanqiang
+  sni: www.microsoft.com
+  skip-cert-verify: true
+  name: 🇩🇪DE-HYSTERIA2-21
+  udp: true
 proxy-groups:
 - name: 🚀 节点选择
   type: select
@@ -206,6 +262,12 @@ proxy-groups:
   - 🇫🇷FR-HYSTERIA2-13
   - 🇩🇪DE-HYSTERIA2-14
   - 🇩🇪DE-TUIC-15
+  - 🇫🇷FR-SSR-16
+  - 🏳️UNK-SS-17
+  - 🇩🇪DE-HYSTERIA2-18
+  - 🇩🇪DE-VLESS-19
+  - 🏳️UNK-VMESS-20
+  - 🇩🇪DE-HYSTERIA2-21
 - name: ♻️ 自动选择
   type: url-test
   url: http://www.gstatic.com/generate_204
@@ -226,6 +288,12 @@ proxy-groups:
   - 🇫🇷FR-HYSTERIA2-13
   - 🇩🇪DE-HYSTERIA2-14
   - 🇩🇪DE-TUIC-15
+  - 🇫🇷FR-SSR-16
+  - 🏳️UNK-SS-17
+  - 🇩🇪DE-HYSTERIA2-18
+  - 🇩🇪DE-VLESS-19
+  - 🏳️UNK-VMESS-20
+  - 🇩🇪DE-HYSTERIA2-21
 - name: ⚖️ 负载均衡
   type: load-balance
   url: http://www.gstatic.com/generate_204
