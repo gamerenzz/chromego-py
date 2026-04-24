@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-ChromeGo Enhanced v4.1.0 - 兼容性优化版
-- 修复：自动过滤 juicity 等导致客户端报错的协议
-- 修复：增强节点提取的稳定性
-- 保持：专业级 DNS 和 Gemini 分流规则
+ChromeGo Enhanced v4.2.0 - 终极修复版
+- 修复：rules 列表末尾缺少的引号语法错误
+- 修复：补充 parse_uri 对 Reality/xhttp 协议的支持
+- 保持：多源合并、深度去重、DNS 防泄露策略
 """
 import yaml
 import json
@@ -23,14 +23,12 @@ socket.setdefaulttimeout(15)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(message)s')
 logger = logging.getLogger("ChromeGo")
 
-# ⚠️ 兼容性设置：在这里可以剔除掉你手机客户端不支持的协议
-# 如果你的客户端报错 "unsupport proxy type", 就把那个名字加进列表
+# ⚠️ 兼容性设置：剔除手机端不支持的协议
 EXCLUDE_TYPES = ['juicity', 'mieru', 'shadowquic'] 
 
 servers_list = []
 extracted_proxies = []
 
-# GeoIP 初始化
 geo_reader = None
 try:
     if os.path.exists('GeoLite2-City.mmdb'):
@@ -54,8 +52,10 @@ def get_location(host: str) -> str:
     except: return "🏳️UNK"
 
 def make_fingerprint(p: dict) -> str:
+    # 唯一特征指纹
     key = f"{p.get('server','')}|{p.get('port','')}|{p.get('type','')}|" \
-          f"{p.get('uuid') or p.get('password') or p.get('auth-str','')}"
+          f"{p.get('uuid') or p.get('password') or p.get('auth-str','')}|" \
+          f"{p.get('sni','')}"
     return hashlib.md5(key.lower().encode()).hexdigest()
 
 def safe_base64_decode(data: str) -> str:
@@ -84,12 +84,8 @@ def parse_server_port(srv):
 
 def add_proxy(p: dict):
     if not p or not p.get('server'): return
-    
-    # 核心修复：检查协议是否在排除列表中
     p_type = str(p.get('type', '')).lower()
-    if p_type in EXCLUDE_TYPES:
-        logger.info(f"跳过不支持的协议: {p_type}")
-        return
+    if p_type in EXCLUDE_TYPES: return
 
     fp = make_fingerprint(p)
     if fp not in servers_list:
@@ -106,9 +102,16 @@ def parse_uri(l: str):
     try:
         if l.startswith('vless://'):
             u = urlparse(l); q = parse_qs(u.query)
-            add_proxy({"type": "vless", "server": u.hostname, "port": u.port or 443, "uuid": u.username,
-                 "network": q.get('type', ['tcp'])[0], "tls": q.get('security', [''])[0] in ('tls', 'reality'),
-                 "sni": q.get('sni', [''])[0], "flow": q.get('flow', [''])[0]})
+            p = {"type": "vless", "server": u.hostname, "port": u.port or 443, "uuid": u.username,
+                 "network": q.get('type', ['tcp'])[0], "tls": q.get('security', ['none'])[0] in ('tls', 'reality'),
+                 "sni": q.get('sni', [''])[0], "flow": q.get('flow', [''])[0]}
+            # 补全 Reality 支持
+            if q.get('security', [''])[0] == 'reality':
+                p['reality-opts'] = {"public-key": q.get('pbk', [''])[0], "short-id": q.get('sid', [''])[0]}
+            # 补全 xhttp 支持
+            if p['network'] == 'xhttp':
+                p['xhttp-opts'] = {"path": q.get('path', ['/'])[0], "mode": q.get('mode', ['auto'])[0]}
+            add_proxy(p)
         elif l.startswith('vmess://'):
             c = json.loads(safe_base64_decode(l[8:]))
             add_proxy({"type": "vmess", "server": c.get('add'), "port": int(c.get('port')), "uuid": c.get('id'), "network": c.get('net', 'tcp'), "tls": c.get('tls') in ('tls', True)})
@@ -126,15 +129,14 @@ def parse_uri(l: str):
 def process_native_json(data: str):
     try:
         c = json.loads(data)
-        # Hysteria 1/2 原生格式解析
-        if 'up_mbps' in c:
+        if 'up_mbps' in c: # Hy1
             h, p, _ = parse_server_port(c.get('server'))
             add_proxy({"type": "hysteria", "server": h, "port": p, "auth-str": c.get('auth_str'), "up": c.get('up_mbps'), "down": c.get('down_mbps'), "sni": c.get('server_name')})
-        elif 'auth' in c and 'bandwidth' in c:
+        elif 'auth' in c and 'bandwidth' in c: # Hy2
             h, p, pr = parse_server_port(c.get('server'))
             add_proxy({"type": "hysteria2", "server": h, "port": p, "password": c.get('auth'), "sni": c.get('tls',{}).get('sni')})
         
-        # Sing-box / Xray Outbounds 解析
+        # Sing-box / Xray
         for ob in c.get('outbounds', []):
             typ = (ob.get('type') or ob.get('protocol') or '').lower()
             h = ob.get('server') or ob.get('settings', {}).get('vnext', [{}])[0].get('address')
@@ -178,8 +180,10 @@ if __name__ == "__main__":
             "enabled": True, "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16",
             "nameserver": ["223.5.5.5", "119.29.29.29"],
             "fallback": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"],
-            "nameserver-policy": {"geosite:google,gemini,openai,anthropic,netflix,disney,tiktok": "https://dns.google/dns-query",
-                "geosite:cn": "223.5.5.5"}
+            "nameserver-policy": {
+                "geosite:google,gemini,openai,anthropic,netflix,disney,tiktok": "https://dns.google/dns-query",
+                "geosite:cn": "223.5.5.5"
+            }
         },
         "proxies": extracted_proxies,
         "proxy-groups": [
@@ -199,10 +203,10 @@ if __name__ == "__main__":
             "DOMAIN-KEYWORD,openai,🤖 Gemini/AI",
             "DOMAIN-KEYWORD,tiktok,🚀 节点选择",
             "GEOIP,CN,🎯 全球直连",
-            "MATCH,🚀 节点选择
+            "MATCH,🚀 节点选择"
         ]
     }
 
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump(clash_config, f, allow_unicode=True, sort_keys=False)
-    print(f"✅ 完成！已剔除不兼容协议。当前节点总数: {len(extracted_proxies)}")
+    print(f"✅ 完成！修正了语法错误并增强了协议支持。节点总数: {len(extracted_proxies)}")
