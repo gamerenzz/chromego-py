@@ -13,7 +13,8 @@ dns:
   - https://dns.google/dns-query
   - https://1.1.1.1/dns-query
   nameserver-policy:
-    geosite:google,gemini,openai: https://dns.google/dns-query
+    geosite:google,gemini,openai,anthropic,netflix,disney,tiktok: https://dns.google/dns-query
+    geosite:cn: 223.5.5.5
 proxies:
 - type: vless
   server: 118.166.0.164
@@ -222,6 +223,12 @@ proxy-groups:
   - 🚀 节点选择
 rules:
 - DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini/AI
+- DOMAIN-SUFFIX,openai.com,🤖 Gemini/AI
+- DOMAIN-SUFFIX,anthropic.com,🤖 Gemini/AI
+- DOMAIN-SUFFIX,claude.ai,🤖 Gemini/AI
+- DOMAIN-SUFFIX,netflix.com,🚀 节点选择
 - DOMAIN-KEYWORD,google,🤖 Gemini/AI
+- DOMAIN-KEYWORD,openai,🤖 Gemini/AI
+- DOMAIN-KEYWORD,tiktok,🚀 节点选择
 - GEOIP,CN,🎯 全球直连
 - MATCH,🚀 节点选择
