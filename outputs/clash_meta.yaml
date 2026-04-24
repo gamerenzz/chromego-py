@@ -22,6 +22,7 @@ proxies:
   uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
   password: null
   sni: null
+  skip-cert-verify: true
   name: 🇹🇼TW-VLESS-1
   udp: true
 - type: vless
@@ -30,6 +31,7 @@ proxies:
   uuid: 5cfc52bc-e701-4160-89df-930a0c040576
   password: null
   sni: null
+  skip-cert-verify: true
   name: 🇩🇪DE-VLESS-2
   udp: true
 - type: vless
@@ -38,6 +40,7 @@ proxies:
   uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
   password: null
   sni: null
+  skip-cert-verify: true
   name: 🇺🇸US-VLESS-3
   udp: true
 - type: vless
@@ -46,6 +49,7 @@ proxies:
   uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
   password: null
   sni: null
+  skip-cert-verify: true
   name: 🏳️UNK-VLESS-4
   udp: true
 - name: 🏳️UNK-HYSTERIA-5
@@ -124,6 +128,9 @@ proxies:
   up: 11
   down: 55
   sni: apple.com
+  skip-cert-verify: true
+  alpn:
+  - h3
   name: 🇩🇪DE-HYSTERIA-10
   udp: true
 - type: hysteria
@@ -133,6 +140,9 @@ proxies:
   up: 11
   down: 55
   sni: apple.com
+  skip-cert-verify: true
+  alpn:
+  - h3
   name: 🇩🇪DE-HYSTERIA-11
   udp: true
 - type: hysteria2
@@ -140,6 +150,9 @@ proxies:
   port: 27921
   password: dongtaiwang.com
   sni: www.bing.com
+  skip-cert-verify: true
+  alpn:
+  - h3
   name: 🇺🇸US-HYSTERIA2-12
   udp: true
 - type: hysteria2
@@ -147,6 +160,9 @@ proxies:
   port: 22000
   password: dongtaiwang.com
   sni: www.microsoft.com
+  skip-cert-verify: true
+  alpn:
+  - h3
   name: 🇫🇷FR-HYSTERIA2-13
   udp: true
 - type: hysteria2
@@ -154,6 +170,9 @@ proxies:
   port: 39463
   password: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   sni: www.microsoft.com
+  skip-cert-verify: true
+  alpn:
+  - h3
   name: 🇩🇪DE-HYSTERIA2-14
   udp: true
 - type: tuic
@@ -162,6 +181,7 @@ proxies:
   uuid: 3ebac90b-6977-47c0-bef5-b2e37554432c
   password: 3ebac90b-6977-47c0-bef5-b2e37554432c
   sni: www.microsoft.com
+  skip-cert-verify: true
   name: 🇩🇪DE-TUIC-15
   udp: true
 proxy-groups:
