@@ -1,3 +1,1 @@
 # 20260424 手动添加：一个订阅源
-https://raw.githubusercontent.com/wenxig/dongtai-sub/refs/heads/main/data/sub.txt
-
