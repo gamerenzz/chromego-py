@@ -202,7 +202,7 @@ proxy-groups:
   type: url-test
   url: http://www.gstatic.com/generate_204
   interval: 300
-  proxies: &id001
+  proxies:
   - 🇹🇼TW-VLESS-1
   - 🇩🇪DE-VLESS-2
   - 🇺🇸US-VLESS-3
@@ -222,7 +222,23 @@ proxy-groups:
   type: load-balance
   url: http://www.gstatic.com/generate_204
   interval: 300
-  proxies: *id001
+  strategy: consistent-hashing
+  proxies:
+  - 🇹🇼TW-VLESS-1
+  - 🇩🇪DE-VLESS-2
+  - 🇺🇸US-VLESS-3
+  - 🏳️UNK-VLESS-4
+  - 🏳️UNK-HYSTERIA-5
+  - 🇫🇷FR-TUIC-6
+  - 🇩🇪DE-TUIC-7
+  - 🇫🇷FR-TUIC-8
+  - 🇫🇷FR-TUIC-9
+  - 🇩🇪DE-HYSTERIA-10
+  - 🇩🇪DE-HYSTERIA-11
+  - 🇺🇸US-HYSTERIA2-12
+  - 🇫🇷FR-HYSTERIA2-13
+  - 🇩🇪DE-HYSTERIA2-14
+  - 🇩🇪DE-TUIC-15
 - name: 🤖 Gemini/AI
   type: select
   proxies:
