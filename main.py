@@ -178,7 +178,8 @@ if __name__ == "__main__":
             "enabled": True, "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16",
             "nameserver": ["223.5.5.5", "119.29.29.29"],
             "fallback": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"],
-            "nameserver-policy": {"geosite:google,gemini,openai": "https://dns.google/dns-query"}
+            "nameserver-policy": {"geosite:google,gemini,openai,anthropic,netflix,disney,tiktok": "https://dns.google/dns-query",
+                "geosite:cn": "223.5.5.5"}
         },
         "proxies": extracted_proxies,
         "proxy-groups": [
@@ -190,9 +191,15 @@ if __name__ == "__main__":
         ],
         "rules": [
             "DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini/AI",
+            "DOMAIN-SUFFIX,openai.com,🤖 Gemini/AI",
+            "DOMAIN-SUFFIX,anthropic.com,🤖 Gemini/AI",
+            "DOMAIN-SUFFIX,claude.ai,🤖 Gemini/AI",
+            "DOMAIN-SUFFIX,netflix.com,🚀 节点选择",
             "DOMAIN-KEYWORD,google,🤖 Gemini/AI",
+            "DOMAIN-KEYWORD,openai,🤖 Gemini/AI",
+            "DOMAIN-KEYWORD,tiktok,🚀 节点选择",
             "GEOIP,CN,🎯 全球直连",
-            "MATCH,🚀 节点选择"
+            "MATCH,🚀 节点选择
         ]
     }
 
