@@ -2,6 +2,7 @@ mixed-port: 7890
 allow-lan: true
 mode: rule
 ipv6: true
+log-level: info
 dns:
   enabled: true
   enhanced-mode: fake-ip
@@ -17,8 +18,43 @@ dns:
     geoip-code: CN
     ipcidr:
     - 240.0.0.0/4
+  nameserver-policy:
+    geosite:google,gemini,openai,facebook,youtube,telegram: https://dns.google/dns-query
+    geosite:cn: 223.5.5.5
 proxies:
-- name: 🏳️UNK-HYSTERIA-1
+- type: vless
+  server: 118.166.0.164
+  port: 443
+  uuid: b0a4c3bf-f170-46e2-8cef-7ed2fc2e6748
+  password: null
+  sni: null
+  name: 🇹🇼TW-VLESS-1
+  udp: true
+- type: vless
+  server: 89.144.35.230
+  port: 443
+  uuid: 5cfc52bc-e701-4160-89df-930a0c040576
+  password: null
+  sni: null
+  name: 🇩🇪DE-VLESS-2
+  udp: true
+- type: vless
+  server: 157.254.223.137
+  port: 443
+  uuid: 0b138cbd-73f2-482c-ac69-c4b2ebeb891d
+  password: null
+  sni: null
+  name: 🇺🇸US-VLESS-3
+  udp: true
+- type: vless
+  server: 2a14:7584:d097::a
+  port: 443
+  uuid: 53d74aab-6471-4c1b-ace7-fac837d1bfbd
+  password: null
+  sni: null
+  name: 🏳️UNK-VLESS-4
+  udp: true
+- name: 🏳️UNK-HYSTERIA-5
   type: hysteria
   server: 2a14:7584:d097::a
   port: 54177
@@ -30,7 +66,8 @@ proxies:
   protocol: udp
   up: 11 Mbps
   down: 55 Mbps
-- name: 🇫🇷FR-TUIC-2
+  udp: true
+- name: 🇫🇷FR-TUIC-6
   server: ip1.758733.xyz
   port: 10088
   type: tuic
@@ -43,7 +80,8 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- name: 🇩🇪DE-TUIC-3
+  udp: true
+- name: 🇩🇪DE-TUIC-7
   server: 178.18.147.199
   port: 42487
   type: tuic
@@ -56,7 +94,8 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- name: 🇫🇷FR-TUIC-4
+  udp: true
+- name: 🇫🇷FR-TUIC-8
   server: 163.172.116.154
   port: 33887
   type: tuic
@@ -69,7 +108,8 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
-- name: 🇫🇷FR-TUIC-5
+  udp: true
+- name: 🇫🇷FR-TUIC-9
   server: 5.178.101.117
   port: 30006
   type: tuic
@@ -82,6 +122,7 @@ proxies:
   udp-relay-mode: native
   skip-cert-verify: true
   congestion-controller: bbr
+  udp: true
 - type: hysteria
   server: 5.83.129.153
   port: 20088
@@ -89,10 +130,10 @@ proxies:
   up: 11
   down: 55
   sni: apple.com
-  skip-cert-verify: true
   alpn:
   - h3
-  name: 🇩🇪DE-HYSTERIA-6
+  name: 🇩🇪DE-HYSTERIA-10
+  udp: true
 - type: hysteria
   server: 5.83.129.90
   port: 54177
@@ -100,48 +141,34 @@ proxies:
   up: 11
   down: 55
   sni: apple.com
-  skip-cert-verify: true
   alpn:
   - h3
-  name: 🇩🇪DE-HYSTERIA-7
+  name: 🇩🇪DE-HYSTERIA-11
+  udp: true
 - type: hysteria2
   server: 157.254.223.43
   port: 27921
   password: dongtaiwang.com
   sni: www.bing.com
-  skip-cert-verify: true
   ports: 28000-29000
-  name: 🇺🇸US-HYSTERIA2-8
+  name: 🇺🇸US-HYSTERIA2-12
+  udp: true
 - type: hysteria2
   server: 2001:bc8:32d7:17b::3
   port: 22000
   password: dongtaiwang.com
   sni: www.microsoft.com
-  skip-cert-verify: true
-  name: 🇫🇷FR-HYSTERIA2-9
+  ports: null
+  name: 🇫🇷FR-HYSTERIA2-13
+  udp: true
 - type: hysteria2
   server: 2a10:3c80:0:f::2
   port: 39463
   password: VNws548Lj/fDRk58HE6dKAcTNpb8+iIk+ycqKEBNG/U=
   sni: www.microsoft.com
-  skip-cert-verify: true
-  name: 🇩🇪DE-HYSTERIA2-10
-- type: juicity
-  server: fan.193919.xyz
-  port: 45889
-  uuid: abbf6900-2bfb-4019-89e4-4875e831cea8
-  password: dongtaiwang.com
-  sni: fan.193919.xyz
-  skip-cert-verify: true
-  name: 🇹🇼TW-JUICITY-11
-- type: juicity
-  server: 5.83.129.153
-  port: 22222
-  uuid: 4b230023-d64a-4231-b5ca-c38a4546a5d0
-  password: dongtaiwang.com
-  sni: bing.com
-  skip-cert-verify: true
-  name: 🇩🇪DE-JUICITY-12
+  ports: null
+  name: 🇩🇪DE-HYSTERIA2-14
+  udp: true
 - type: http
   server: fan.193919.xyz
   port: 44000
@@ -149,7 +176,8 @@ proxies:
   password: dongtaiwang.com
   tls: true
   sni: fan.193919.xyz
-  name: 🇹🇼TW-HTTP-13
+  name: 🇹🇼TW-HTTP-15
+  udp: true
 - type: http
   server: hk.336892.xyz
   port: 33550
@@ -157,57 +185,89 @@ proxies:
   password: dongtaiwang.com
   tls: true
   sni: hk.336892.xyz
-  name: 🇺🇸US-HTTP-14
+  name: 🇺🇸US-HTTP-16
+  udp: true
 - type: tuic
   server: 89.144.35.232
   port: 17306
   uuid: 3ebac90b-6977-47c0-bef5-b2e37554432c
   password: 3ebac90b-6977-47c0-bef5-b2e37554432c
   sni: www.microsoft.com
-  skip-cert-verify: true
-  name: 🇩🇪DE-TUIC-15
+  name: 🇩🇪DE-TUIC-17
+  udp: true
+- type: juicity
+  server: fan.193919.xyz
+  port: 45889
+  uuid: abbf6900-2bfb-4019-89e4-4875e831cea8
+  password: dongtaiwang.com
+  sni: fan.193919.xyz
+  name: 🇹🇼TW-JUICITY-18
+  udp: true
+- type: juicity
+  server: 5.83.129.153
+  port: 22222
+  uuid: 4b230023-d64a-4231-b5ca-c38a4546a5d0
+  password: dongtaiwang.com
+  sni: bing.com
+  name: 🇩🇪DE-JUICITY-19
+  udp: true
 proxy-groups:
 - name: 🚀 节点选择
   type: select
   proxies:
   - ♻️ 自动选择
+  - ⚖️ 负载均衡
   - DIRECT
-  - 🏳️UNK-HYSTERIA-1
-  - 🇫🇷FR-TUIC-2
-  - 🇩🇪DE-TUIC-3
-  - 🇫🇷FR-TUIC-4
-  - 🇫🇷FR-TUIC-5
-  - 🇩🇪DE-HYSTERIA-6
-  - 🇩🇪DE-HYSTERIA-7
-  - 🇺🇸US-HYSTERIA2-8
-  - 🇫🇷FR-HYSTERIA2-9
-  - 🇩🇪DE-HYSTERIA2-10
-  - 🇹🇼TW-JUICITY-11
-  - 🇩🇪DE-JUICITY-12
-  - 🇹🇼TW-HTTP-13
-  - 🇺🇸US-HTTP-14
-  - 🇩🇪DE-TUIC-15
+  - 🇹🇼TW-VLESS-1
+  - 🇩🇪DE-VLESS-2
+  - 🇺🇸US-VLESS-3
+  - 🏳️UNK-VLESS-4
+  - 🏳️UNK-HYSTERIA-5
+  - 🇫🇷FR-TUIC-6
+  - 🇩🇪DE-TUIC-7
+  - 🇫🇷FR-TUIC-8
+  - 🇫🇷FR-TUIC-9
+  - 🇩🇪DE-HYSTERIA-10
+  - 🇩🇪DE-HYSTERIA-11
+  - 🇺🇸US-HYSTERIA2-12
+  - 🇫🇷FR-HYSTERIA2-13
+  - 🇩🇪DE-HYSTERIA2-14
+  - 🇹🇼TW-HTTP-15
+  - 🇺🇸US-HTTP-16
+  - 🇩🇪DE-TUIC-17
+  - 🇹🇼TW-JUICITY-18
+  - 🇩🇪DE-JUICITY-19
 - name: ♻️ 自动选择
   type: url-test
   url: http://www.gstatic.com/generate_204
   interval: 300
-  proxies:
-  - 🏳️UNK-HYSTERIA-1
-  - 🇫🇷FR-TUIC-2
-  - 🇩🇪DE-TUIC-3
-  - 🇫🇷FR-TUIC-4
-  - 🇫🇷FR-TUIC-5
-  - 🇩🇪DE-HYSTERIA-6
-  - 🇩🇪DE-HYSTERIA-7
-  - 🇺🇸US-HYSTERIA2-8
-  - 🇫🇷FR-HYSTERIA2-9
-  - 🇩🇪DE-HYSTERIA2-10
-  - 🇹🇼TW-JUICITY-11
-  - 🇩🇪DE-JUICITY-12
-  - 🇹🇼TW-HTTP-13
-  - 🇺🇸US-HTTP-14
-  - 🇩🇪DE-TUIC-15
-- name: 🤖 Gemini/AI
+  proxies: &id001
+  - 🇹🇼TW-VLESS-1
+  - 🇩🇪DE-VLESS-2
+  - 🇺🇸US-VLESS-3
+  - 🏳️UNK-VLESS-4
+  - 🏳️UNK-HYSTERIA-5
+  - 🇫🇷FR-TUIC-6
+  - 🇩🇪DE-TUIC-7
+  - 🇫🇷FR-TUIC-8
+  - 🇫🇷FR-TUIC-9
+  - 🇩🇪DE-HYSTERIA-10
+  - 🇩🇪DE-HYSTERIA-11
+  - 🇺🇸US-HYSTERIA2-12
+  - 🇫🇷FR-HYSTERIA2-13
+  - 🇩🇪DE-HYSTERIA2-14
+  - 🇹🇼TW-HTTP-15
+  - 🇺🇸US-HTTP-16
+  - 🇩🇪DE-TUIC-17
+  - 🇹🇼TW-JUICITY-18
+  - 🇩🇪DE-JUICITY-19
+- name: ⚖️ 负载均衡
+  type: load-balance
+  url: http://www.gstatic.com/generate_204
+  interval: 300
+  strategy: consistent-hashing
+  proxies: *id001
+- name: 🤖 AI 服务
   type: select
   proxies:
   - 🚀 节点选择
@@ -218,9 +278,8 @@ proxy-groups:
   - DIRECT
   - 🚀 节点选择
 rules:
-- DOMAIN-SUFFIX,gemini.google.com,🤖 Gemini/AI
-- DOMAIN-KEYWORD,google,🤖 Gemini/AI
-- DOMAIN-SUFFIX,googleapis.com,🤖 Gemini/AI
-- DOMAIN-SUFFIX,gstatic.com,🤖 Gemini/AI
+- DOMAIN-SUFFIX,gemini.google.com,🤖 AI 服务
+- DOMAIN-KEYWORD,google,🤖 AI 服务
+- DOMAIN-KEYWORD,openai,🤖 AI 服务
 - GEOIP,CN,🎯 全球直连
 - MATCH,🚀 节点选择
