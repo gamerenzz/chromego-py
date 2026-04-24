@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
-ChromeGo Enhanced v4.4.0 - 修复混合订阅解析与解码版
-- 修复：修复 Base64/明文订阅混合识别失败导致 0 节点的问题
-- 修复：修复 Hysteria2 等协议中的 URL 编码（%2F等）密码解析
-- 新增：增加对 SSR (ShadowsocksR) 协议的解析支持
-- 保持：多源去重与 Gemini/AI 专业分流、Reality/xhttp 兼容
+ChromeGo Enhanced v4.5.0 - 修复 VMESS alterId 缺失及字段净化版
+- 修复：VMESS 缺少 alterId 导致 Clash 报错 "key 'alterId' missing" 的致命问题
+- 修复：VMESS ws 模式缺少 ws-opts (path/host) 导致无法连接的问题
+- 优化：自动清理配置中的 null、空字符串等垃圾字段，提升内核兼容性
 """
 import yaml
 import json
@@ -17,7 +16,7 @@ import hashlib
 import re
 import base64
 import socket
-from urllib.parse import urlparse, parse_qs, unquote # 引入 unquote 解码
+from urllib.parse import urlparse, parse_qs, unquote
 
 # ==================== 全局设置 ====================
 socket.setdefaulttimeout(15)
@@ -82,16 +81,20 @@ def parse_server_port(srv):
 
 def add_proxy(p: dict):
     if not p or not p.get('server'): return
-    p_type = str(p.get('type', '')).lower()
+    
+    # 🌟 核心优化：清理空值，防止出现 password: null 或 sni: '' 导致内核报错
+    clean_p = {k: v for k, v in p.items() if v not in (None, '', [], {})}
+    
+    p_type = str(clean_p.get('type', '')).lower()
     if p_type in EXCLUDE_TYPES: return
 
-    fp = make_fingerprint(p)
+    fp = make_fingerprint(clean_p)
     if fp not in servers_list:
-        loc = get_location(p.get('server'))
+        loc = get_location(clean_p.get('server'))
         idx = len(extracted_proxies) + 1
-        p['name'] = f"{loc}-{p_type.upper()}-{idx}"
-        p['udp'] = True
-        extracted_proxies.append(p)
+        clean_p['name'] = f"{loc}-{p_type.upper()}-{idx}"
+        clean_p['udp'] = True
+        extracted_proxies.append(clean_p)
         servers_list.append(fp)
 
 def parse_uri(l: str):
@@ -113,7 +116,24 @@ def parse_uri(l: str):
             
         elif l.startswith('vmess://'):
             c = json.loads(safe_base64_decode(l[8:]))
-            add_proxy({"type": "vmess", "server": c.get('add'), "port": int(c.get('port')), "uuid": c.get('id'), "network": c.get('net', 'tcp'), "tls": c.get('tls') in ('tls', True, 1)})
+            p = {
+                "type": "vmess", 
+                "server": c.get('add'), 
+                "port": int(c.get('port')), 
+                "uuid": c.get('id'), 
+                "alterId": int(c.get('aid', 0)),  # 🌟 核心修复：强制补全 alterId
+                "cipher": c.get('scy', 'auto'),
+                "network": c.get('net', 'tcp'), 
+                "tls": c.get('tls') in ('tls', True, '1', 1)
+            }
+            # 🌟 核心修复：补全 ws 的路径和 host，否则无法上网
+            if p['network'] == 'ws':
+                ws_opts = {}
+                if c.get('path'): ws_opts['path'] = c.get('path')
+                if c.get('host'): ws_opts['headers'] = {"Host": c.get('host')}
+                if ws_opts: p['ws-opts'] = ws_opts
+            if c.get('sni'): p['servername'] = c.get('sni')
+            add_proxy(p)
             
         elif l.startswith('ss://'):
             u = urlparse(l)
@@ -124,11 +144,9 @@ def parse_uri(l: str):
                 
         elif l.startswith(('hysteria2://', 'hy2://')):
             u = urlparse(l); q = parse_qs(u.query)
-            # 修复密码被 URL 编码的问题
             pwd = unquote(u.username) if u.username else ""
             add_proxy({"type": "hysteria2", "server": u.hostname, "port": u.port or 443, "password": pwd, "sni": q.get('sni',[''])[0], "skip-cert-verify": True})
             
-        # 新增：SSR 支持解析
         elif l.startswith('ssr://'):
             decoded = safe_base64_decode(l[6:])
             if decoded:
@@ -141,7 +159,7 @@ def parse_uri(l: str):
                         "password": safe_base64_decode(m[5])
                     })
     except Exception as e:
-        pass # 容错，跳过无法解析的单行
+        pass
 
 def process_native_json(data: str):
     try:
@@ -193,11 +211,10 @@ def process_file(file_path: str):
                 c = yaml.safe_load(raw)
                 for p in (c.get('proxies', []) or []): add_proxy(p)
             else:
-                # 修复：正确判定是明文集合还是 Base64 集合
                 if '://' in raw:
-                    content = raw  # 如果内容包含 :// 显然是明文合集
+                    content = raw 
                 else:
-                    content = safe_base64_decode(raw) # 否则当作 Base64 解码
+                    content = safe_base64_decode(raw)
                 
                 for line in content.splitlines(): 
                     parse_uri(line)
@@ -251,4 +268,4 @@ if __name__ == "__main__":
 
     with open("outputs/clash_meta.yaml", "w", encoding="utf-8") as f:
         yaml.dump(clash_config, f, allow_unicode=True, sort_keys=False)
-    print(f"✅ 处理完成！已修复协议解析支持。总提取节点数: {len(extracted_proxies)}")
+    print(f"✅ 处理完成！已修复 VMESS alterId 报错。总提取节点数: {len(extracted_proxies)}")
