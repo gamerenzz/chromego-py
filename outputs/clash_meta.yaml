@@ -176,30 +176,6 @@ proxies:
   skip-cert-verify: true
   name: 🇩🇪DE-TUIC-15
   udp: true
-- type: ssr
-  server: ssr2.762988.xyz
-  port: 33336
-  protocol: auth_chain_a
-  cipher: chacha20-ietf
-  obfs: tls1.2_ticket_auth
-  password: dongtaiwang.com
-  name: 🇫🇷FR-SSR-16
-  udp: true
-- type: ss
-  server: 2a14:7584:d118::d
-  port: 11111
-  cipher: aes-256-gcm
-  password: github.com/Alvin9999-newpac/fanqiang
-  name: 🏳️UNK-SS-17
-  udp: true
-- type: hysteria2
-  server: 178.18.147.66
-  port: 29900
-  password: github.com/Alvin9999-newpac/fanqiang
-  sni: www.microsoft.com
-  skip-cert-verify: true
-  name: 🇩🇪DE-HYSTERIA2-18
-  udp: true
 - type: vless
   server: 178.18.147.163
   port: 15530
@@ -213,7 +189,7 @@ proxies:
   xhttp-opts:
     path: /github.com/Alvin9999-newpac/fanqiang
     mode: auto
-  name: 🇩🇪DE-VLESS-19
+  name: 🇩🇪DE-VLESS-16
   udp: true
 - type: vmess
   server: 2a14:7584:d117::14
@@ -225,11 +201,35 @@ proxies:
   tls: false
   ws-opts:
     path: /github.com/Alvin9999-newpac/fanqiang
-  name: 🏳️UNK-VMESS-20
+  name: 🏳️UNK-VMESS-17
   udp: true
 - type: hysteria2
   server: 83.243.86.103
   port: 38563
+  password: github.com/Alvin9999-newpac/fanqiang
+  sni: www.microsoft.com
+  skip-cert-verify: true
+  name: 🇩🇪DE-HYSTERIA2-18
+  udp: true
+- type: ssr
+  server: ssr2.762988.xyz
+  port: 33336
+  protocol: auth_chain_a
+  cipher: chacha20-ietf
+  obfs: tls1.2_ticket_auth
+  password: dongtaiwang.com
+  name: 🇫🇷FR-SSR-19
+  udp: true
+- type: ss
+  server: 2a14:7584:d118::d
+  port: 11111
+  cipher: aes-256-gcm
+  password: github.com/Alvin9999-newpac/fanqiang
+  name: 🏳️UNK-SS-20
+  udp: true
+- type: hysteria2
+  server: 178.18.147.66
+  port: 29900
   password: github.com/Alvin9999-newpac/fanqiang
   sni: www.microsoft.com
   skip-cert-verify: true
@@ -257,11 +257,11 @@ proxy-groups:
   - 🇺🇸US-HYSTERIA2-13
   - 🇩🇪DE-HYSTERIA2-14
   - 🇩🇪DE-TUIC-15
-  - 🇫🇷FR-SSR-16
-  - 🏳️UNK-SS-17
+  - 🇩🇪DE-VLESS-16
+  - 🏳️UNK-VMESS-17
   - 🇩🇪DE-HYSTERIA2-18
-  - 🇩🇪DE-VLESS-19
-  - 🏳️UNK-VMESS-20
+  - 🇫🇷FR-SSR-19
+  - 🏳️UNK-SS-20
   - 🇩🇪DE-HYSTERIA2-21
 - name: ♻️ 自动选择
   type: url-test
@@ -283,11 +283,11 @@ proxy-groups:
   - 🇺🇸US-HYSTERIA2-13
   - 🇩🇪DE-HYSTERIA2-14
   - 🇩🇪DE-TUIC-15
-  - 🇫🇷FR-SSR-16
-  - 🏳️UNK-SS-17
+  - 🇩🇪DE-VLESS-16
+  - 🏳️UNK-VMESS-17
   - 🇩🇪DE-HYSTERIA2-18
-  - 🇩🇪DE-VLESS-19
-  - 🏳️UNK-VMESS-20
+  - 🇫🇷FR-SSR-19
+  - 🏳️UNK-SS-20
   - 🇩🇪DE-HYSTERIA2-21
 - name: ⚖️ 负载均衡
   type: load-balance
